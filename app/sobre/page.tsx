@@ -1,9 +1,15 @@
+"use client"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Sparkles, Users, Award } from "lucide-react"
-
+import WhatsAppButton from "@/components/whatsapp" 
+import { useState } from "react"
 export default function SobrePage() {
+
+const [buttonColor, setButtonColor] = useState('#25D366');
+
+
   const values = [
     {
       icon: Heart,
@@ -41,7 +47,13 @@ export default function SobrePage() {
             </p>
           </div>
         </section>
-
+ <WhatsAppButton
+        phoneNumber="1-212-736-5000"
+        message="Olá, gostaria de mais informações!"
+        buttonColor={'#25D366'}
+        buttonText="Fale conosco"
+        position="bottom-right"
+      />
         {/* Story Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-4xl">

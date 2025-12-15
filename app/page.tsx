@@ -1,11 +1,18 @@
+"use client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ArrowRight, Heart, Sparkles, Home } from "lucide-react"
+import WhatsAppButton from "@/components/whatsapp" 
+import { useState } from "react"
 
 export default function HomePage() {
+
+  const [buttonColor, setButtonColor] = useState('#25D366');
+  
+
   const featuredProducts = [
     {
       name: "Necessaire",
@@ -27,7 +34,13 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
+ <WhatsAppButton
+        phoneNumber="1-212-736-5000"
+        message="Olá, gostaria de mais informações!"
+        buttonColor={'#25D366'}
+        buttonText="Fale conosco"
+        position="bottom-right"
+      />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-24 md:py-32 lg:py-40 px-4 overflow-hidden">

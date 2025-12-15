@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Instagram, Mail, Phone, MapPin, Send } from "lucide-react"
 import { useState } from "react"
+import WhatsAppButton from "@/components/whatsapp" 
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -28,6 +29,10 @@ export default function ContatoPage() {
     setFormData({ nome: "", email: "", telefone: "", mensagem: "" })
   }
 
+
+  const [buttonColor, setButtonColor] = useState('#25D366')
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
@@ -38,27 +43,27 @@ export default function ContatoPage() {
   const contactInfo = [
     {
       icon: Phone,
-      title: "Telefone",
-      value: "(11) 99999-9999",
-      link: "tel:+5511999999999",
+      title: "Whatsapp",
+      value: "(19) 99778-5025",
+      link: "https://w.app/vbp4tr",
     },
     {
       icon: Mail,
       title: "E-mail",
-      value: "contato@euquefiz.com",
-      link: "mailto:contato@euquefiz.com",
+      value: "dani.franca002@gmail.com",
+      link: "inserir link aqui animal",
     },
     {
       icon: Instagram,
       title: "Instagram",
-      value: "@euquefiz",
-      link: "https://instagram.com/euquefiz",
+      value: "@euquefiz_bydani",
+      link: "https://www.instagram.com/euquefiz_bydani/",
     },
     {
       icon: MapPin,
       title: "Localização",
-      value: "São Paulo, SP",
-      link: "#",
+      value: "Campinas, SP",
+      link: "https://maps.app.goo.gl/zSWqb8y1ew3L2QMP8",
     },
   ]
 
@@ -78,7 +83,16 @@ export default function ContatoPage() {
         </section>
 
         {/* Contact Section */}
+
         <section className="py-16 px-4">
+          <WhatsAppButton
+        phoneNumber="1-212-736-5000"
+        message="Olá, gostaria de mais informações!"
+        buttonColor={'#25D366'}
+        buttonText="Fale conosco"
+        position="bottom-right"
+      />
+
           <div className="container mx-auto max-w-6xl">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Contact Form */}

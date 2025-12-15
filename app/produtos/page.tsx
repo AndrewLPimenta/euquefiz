@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ProductModal } from "@/components/product-modal"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import WhatsAppButton from "@/components/whatsapp" 
 
 interface MediaItem {
   type: "image" | "video"
@@ -24,6 +25,7 @@ interface Product {
   media?: MediaItem[]
 }
 
+
 export default function ProdutosPage() {
   const [selectedCategory, setSelectedCategory] = useState("Todos")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -33,6 +35,9 @@ export default function ProdutosPage() {
     setSelectedProduct(product)
     setIsModalOpen(true)
   }
+
+
+const [buttonColor, setButtonColor] = useState('#25D366');
 
   const products: Product[] = [
     {
@@ -190,8 +195,14 @@ export default function ProdutosPage() {
             </p>
           </div>
         </section>
+ <WhatsAppButton
+        phoneNumber="1-212-736-5000"
+        message="Olá, gostaria de mais informações!"
+        buttonColor={buttonColor}
+        buttonText="Fale conosco"
+        position="bottom-right"
+      />
 
-        {/* Products Grid */}
         <section className="py-12 md:py-20 px-4">
           <div className="container mx-auto">
             <div className="flex flex-wrap gap-2 md:gap-3 mb-12 md:mb-16 justify-center">
