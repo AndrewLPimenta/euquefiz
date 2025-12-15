@@ -35,8 +35,7 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col">
       <Header />
  <WhatsAppButton
-        phoneNumber="1-212-736-5000"
-        message="Olá, gostaria de mais informações!"
+        message="Olá, Danielle!"
         buttonColor={'#25D366'}
         buttonText="Fale conosco"
         position="bottom-right"

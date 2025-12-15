@@ -86,7 +86,7 @@ export default function ContatoPage() {
 
         <section className="py-16 px-4">
           <WhatsAppButton
-        phoneNumber="1-212-736-5000"
+
         message="Olá, gostaria de mais informações!"
         buttonColor={'#25D366'}
         buttonText="Fale conosco"

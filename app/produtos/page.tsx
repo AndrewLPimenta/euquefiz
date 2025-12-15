@@ -196,7 +196,7 @@ const [buttonColor, setButtonColor] = useState('#25D366');
           </div>
         </section>
  <WhatsAppButton
-        phoneNumber="1-212-736-5000"
+
         message="Olá, gostaria de mais informações!"
         buttonColor={buttonColor}
         buttonText="Fale conosco"
