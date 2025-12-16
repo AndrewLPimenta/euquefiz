@@ -167,7 +167,7 @@ export function ProductRevealCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
         
         {/* Favorite Button */}
-        <motion.button
+        {/* <motion.button
           onClick={handleFavorite}
           variants={favoriteVariants}
           animate={isFavorite ? "favorite" : "rest"}
@@ -179,7 +179,7 @@ export function ProductRevealCard({
           )}
         >
           <Heart className={cn("w-4 h-4", isFavorite && "fill-current")} />
-        </motion.button>
+        </motion.button> */}
 
         {/* Discount Badge */}
         {originalPrice && originalPrice > price && (

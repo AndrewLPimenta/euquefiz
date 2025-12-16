@@ -22,6 +22,7 @@ import {
   GiBelt,
   GiWallet
 } from 'react-icons/gi';
+import { SandaliasPromoSection } from "@/components/SandaliasPromoSection"
 
 interface Product {
   id: number
@@ -203,6 +204,28 @@ export default function ProdutosPage() {
     },
   ]
 
+  const sandalias = [
+  {
+    id: 101,
+    name: "Sandália Artesanal Salmão",
+    description: "Conforto e elegância para o dia a dia",
+    colors: ["Salmão", "Verde Água"],
+    category: "Sandálias",
+    price: "R$ 149,00",
+    media: [{ type: "image", url: "./produto-default.png" }]
+  },
+  {
+    id: 102,
+    name: "Sandália Artesanal Verde Água",
+    description: "Leveza e estilo em cada passo",
+    colors: ["Verde Água"],
+    category: "Sandálias",
+    price: "R$ 149,00",
+    media: [{ type: "image", url: "./produto-default.png" }]
+  }
+]
+
+
   const categories = ["Todos","Sandálias" ,"Organização", "Acessórios", "Mesa", "Banheiro", "Decoração"]
 
 
@@ -236,8 +259,11 @@ export default function ProdutosPage() {
           buttonText=""
           position="bottom-right"
         />
-
+<SandaliasPromoSection
+ products={sandalias}
+/>
         <section className="py-12 md:py-20 px-4">
+          
           <div className="container mx-auto" id="nossos-produtos">
             {/* Category Filters */}
             <div className="flex flex-wrap gap-2 md:gap-3 mb-12 md:mb-16 justify-center">
