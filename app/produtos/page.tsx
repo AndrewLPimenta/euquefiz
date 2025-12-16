@@ -172,7 +172,7 @@ export default function ProdutosPage() {
       description: "Destaque suas plantas com cachepôs artesanais únicos",
       detailedDescription:
         "Cachepô artesanal para destacar suas plantas favoritas. Diversos tamanhos e cores disponíveis.",
-      colors: ["Salmão", "Verde Água", "Terracota"],
+      colors: ["Salmão", "Verde Água"],
       category: "Decoração",
       price: "R$ 42,00",
       rating: 4.7,
