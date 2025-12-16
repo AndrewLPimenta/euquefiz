@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { ArrowRight, Heart, Sparkles, Home } from "lucide-react"
 import WhatsAppButton from "@/components/whatsapp" 
 import { useState } from "react"
-
+import { HeroSection } from "@/components/ui/hero-section-2"
 export default function HomePage() {
 
   const [buttonColor, setButtonColor] = useState('#25D366');
@@ -37,12 +37,37 @@ export default function HomePage() {
  <WhatsAppButton
         message="Olá, Danielle!"
         buttonColor={'#25D366'}
-        buttonText="Fale conosco"
+        buttonText=""
         position="bottom-right"
       />
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative py-24 md:py-32 lg:py-40 px-4 overflow-hidden">
+        
+      <HeroSection
+        // logo={{
+        //   url: "/hero-logo.png",
+
+
+        // }}
+        // slogan="Arte que transforma espaços"
+        title={
+          <>
+            Produtos
+            <br />
+            <span className="text-primary">Únicos</span> pra você
+          </>
+        }
+        subtitle="Descubra peças exclusivas feitas sob medida. Cada item conta uma história e traz personalidade."
+        callToAction={{
+          text: "Ver Produtos",
+          href: "/produtos"
+        }}
+        
+        backgroundImage="./banner.png"
+
+        className="min-h-screen"
+      />
+
+        {/* <section className="relative py-24 md:py-32 lg:py-40 px-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-background -z-10" />
           <div className="container mx-auto text-center">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -58,7 +83,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
                 <Button asChild size="lg" className="text-base group transition-all duration-300 hover:scale-105">
                   <Link href="/produtos">
-                    Ver Coleção
+                    Ver Coleções
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                   </Link>
                 </Button>
@@ -66,15 +91,15 @@ export default function HomePage() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="text-base transition-all duration-300 hover:scale-105 bg-transparent"
+                  className="text-base transition-all duration-300 hover:scale-105 bg-transparent border boder-primary-500"
                 >
-                  <Link href="/sobre">Nossa História</Link>
+                  <Link href="/sobre">Sobre nós</Link>
                 </Button>
               </div>
             </div>
           </div>
-        </section>
-
+        </section> */}
+       
         {/* Features Section */}
         <section className="py-20 px-4 bg-muted/30">
           <div className="container mx-auto">
@@ -167,7 +192,7 @@ export default function HomePage() {
                 className="group transition-all duration-300 hover:scale-105 bg-transparent"
               >
                 <Link href="/produtos">
-                  Ver Toda Coleção
+                  Ver mais
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </Button>
@@ -189,7 +214,7 @@ export default function HomePage() {
               </p>
               <Button asChild size="lg" className="text-base group transition-all duration-300 hover:scale-105">
                 <Link href="/contato">
-                  Fale Conosco
+                Entrar em contato
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </Button>

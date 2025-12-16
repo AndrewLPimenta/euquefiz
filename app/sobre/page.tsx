@@ -51,7 +51,7 @@ const [buttonColor, setButtonColor] = useState('#25D366');
         phoneNumber="1-212-736-5000"
         message="Olá, gostaria de mais informações!"
         buttonColor={'#25D366'}
-        buttonText="Fale conosco"
+        buttonText=""
         position="bottom-right"
       />
         {/* Story Section */}

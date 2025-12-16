@@ -2,45 +2,67 @@
 
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ProductModal } from "@/components/product-modal"
+import { ProductRevealGridAdapter } from "@/components/ui/product-reveal-grid-adapter"
+import WhatsAppButton from "@/components/whatsapp"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import WhatsAppButton from "@/components/whatsapp" 
-
-interface MediaItem {
-  type: "image" | "video"
-  url: string
-  thumbnail?: string
-}
+import { FloatingIconsHero } from '@/components/ui/floating-icons-hero-section';
+import {
+  GiHighHeel,
+  GiHandBag,
+  GiCutDiamond,
+  GiScissors,
+  GiEarrings,
+  GiRing,
+  GiRunningShoe,
+  GiSunglasses,
+  GiTShirt,
+  GiNecklace,
+  GiBelt,
+  GiWallet
+} from 'react-icons/gi';
 
 interface Product {
+  id: number
   name: string
   description: string
+  detailedDescription?: string
   colors: string[]
   category: string
-  price?: string
-  detailedDescription?: string
-  media?: MediaItem[]
+  price: string
+  originalPrice?: string
+  rating?: number
+  reviewCount?: number
+  media?: Array<{
+    type: "image" | "video"
+    url: string
+    thumbnail?: string
+  }>
 }
 
+const fashionIcons = [
+  { id: 1, icon: GiHighHeel, className: 'top-[15%] left-[10%]' },
+  { id: 2, icon: GiHandBag, className: 'top-[20%] right-[15%]' },
+  { id: 3, icon: GiCutDiamond, className: 'bottom-[30%] left-[5%]' },
+  { id: 4, icon: GiScissors, className: 'top-[40%] left-[20%]' },
+  { id: 5, icon: GiEarrings, className: 'bottom-[20%] right-[10%]' },
+  { id: 6, icon: GiRing, className: 'top-[10%] left-[50%]' },
+  { id: 7, icon: GiRunningShoe, className: 'bottom-[15%] left-[30%]' },
+  { id: 8, icon: GiSunglasses, className: 'top-[60%] right-[25%]' },
+  { id: 9, icon: GiTShirt, className: 'bottom-[40%] right-[30%]' },
+  { id: 10, icon: GiNecklace, className: 'top-[30%] right-[5%]' },
+  { id: 11, icon: GiBelt, className: 'top-[70%] left-[15%]' },
+  { id: 12, icon: GiWallet, className: 'bottom-[10%] right-[20%]' },
+];
 
 export default function ProdutosPage() {
   const [selectedCategory, setSelectedCategory] = useState("Todos")
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  const handleProductClick = (product: Product) => {
-    setSelectedProduct(product)
-    setIsModalOpen(true)
-  }
-
-
-const [buttonColor, setButtonColor] = useState('#25D366');
+  const [buttonColor] = useState('#25D366')
 
   const products: Product[] = [
     {
+      id: 1,
       name: "Necessaire",
       description: "Organize seus produtos de beleza e cuidados pessoais com estilo",
       detailedDescription:
@@ -48,9 +70,16 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água", "Variadas"],
       category: "Organização",
       price: "R$ 45,00",
-      media: [],
+      rating: 4.8,
+      reviewCount: 23,
+      media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 2,
       name: "Kit Escritório",
       description: "Deixe sua mesa de trabalho organizada e inspiradora",
       detailedDescription:
@@ -58,9 +87,17 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água"],
       category: "Organização",
       price: "R$ 89,00",
-      media: [],
+      originalPrice: "R$ 120,00",
+      rating: 4.7,
+      reviewCount: 15,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 3,
       name: "Clutch",
       description: "Acessório elegante para completar seu look em eventos especiais",
       detailedDescription:
@@ -68,9 +105,16 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água", "Dourada"],
       category: "Acessórios",
       price: "R$ 75,00",
-      media: [],
+      rating: 4.9,
+      reviewCount: 31,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 4,
       name: "Sousplat",
       description: "Transforme sua mesa com charme e sofisticação",
       detailedDescription:
@@ -78,9 +122,17 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água", "Neutras"],
       category: "Mesa",
       price: "R$ 35,00",
-      media: [],
+      originalPrice: "R$ 50,00",
+      rating: 4.6,
+      reviewCount: 18,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 5,
       name: "Kit Lavabo",
       description: "Elegância e organização para seu banheiro de visitas",
       detailedDescription:
@@ -88,9 +140,16 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água"],
       category: "Banheiro",
       price: "R$ 120,00",
-      media: [],
+      rating: 4.9,
+      reviewCount: 27,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 6,
       name: "Espírito Santo de Porta",
       description: "Decoração religiosa delicada para sua porta",
       detailedDescription:
@@ -98,9 +157,17 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Branco", "Dourado", "Prateado"],
       category: "Decoração",
       price: "R$ 55,00",
-      media: [],
+      originalPrice: "R$ 75,00",
+      rating: 5.0,
+      reviewCount: 42,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 7,
       name: "Cachepô",
       description: "Destaque suas plantas com cachepôs artesanais únicos",
       detailedDescription:
@@ -108,23 +175,16 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água", "Terracota"],
       category: "Decoração",
       price: "R$ 42,00",
-     media: [
-  {
-    type: "image",
-    url: "/caminho/para/sua-imagem.jpg"
-  },
-  {
-    type: "video",
-    url: "/caminho/para/seu-video.mp4",
-    thumbnail: "/caminho/para/thumbnail.jpg" // opcional
-  },
-  {
-    type: "image",
-    url: "https://url-externa.com/imagem.jpg"
-  }
-]
+      rating: 4.7,
+      reviewCount: 19,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
     {
+      id: 8,
       name: "Trio Cachepô Organizadores",
       description: "Conjunto versátil para plantas e organização criativa",
       detailedDescription:
@@ -132,79 +192,54 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       colors: ["Salmão", "Verde Água", "Combinados"],
       category: "Decoração",
       price: "R$ 110,00",
-      media: [],
-    },
-    {
-      name: "Cesto",
-      description: "Organização prática e decorativa para qualquer ambiente",
-      detailedDescription:
-        "Cesto artesanal versátil para organizar brinquedos, roupas, mantas ou qualquer item da sua casa. Prático e decorativo.",
-      colors: ["Natural", "Salmão", "Verde Água"],
-      category: "Organização",
-      price: "R$ 68,00",
-      media: [],
-    },
-    {
-      name: "Kit Higiene Bebê",
-      description: "Kit completo e encantador para o quarto do seu bebê",
-      detailedDescription:
-        "Kit higiene bebê completo incluindo garrafa térmica, potes e bandeja. Perfeito para decorar e organizar o quarto do bebê.",
-      colors: ["Rosa", "Azul", "Amarelo", "Neutro"],
-      category: "Bebê",
-      price: "R$ 150,00",
-      media: [],
-    },
-    {
-      name: "Chaveiro",
-      description: "Chaveiro artesanal personalizado para presentear ou usar",
-      detailedDescription:
-        "Chaveiro artesanal exclusivo, perfeito para presente ou uso pessoal. Possibilidade de personalização.",
-      colors: ["Variadas"],
-      category: "Acessórios",
-      price: "R$ 15,00",
-      media: [],
-    },
-    {
-      name: "Porta Vinhos",
-      description: "Presente perfeito para apreciadores de vinho",
-      detailedDescription:
-        "Porta vinhos artesanal elegante e funcional. Excelente presente para apreciadores de vinho.",
-      colors: ["Madeira", "Salmão", "Verde Água"],
-      category: "Mesa",
-      price: "R$ 95,00",
-      media: [],
+      originalPrice: "R$ 150,00",
+      rating: 4.8,
+      reviewCount: 34,
+       media: [
+        { type: "image", url: "./produto-default.png" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+
+      ]
     },
   ]
 
-  const categories = ["Todos", "Organização", "Acessórios", "Mesa", "Banheiro", "Decoração", "Bebê"]
+  const categories = ["Todos","Sandálias" ,"Organização", "Acessórios", "Mesa", "Banheiro", "Decoração"]
 
-  const filteredProducts =
-    selectedCategory === "Todos" ? products : products.filter((p) => p.category === selectedCategory)
 
+  
+  const filteredProducts = selectedCategory === "Todos" 
+    ? products 
+    : products.filter((p) => p.category === selectedCategory)
+
+      if (selectedCategory === "Todos") {
+    categories.splice(0, 1)
+
+  }
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-16 md:py-20 px-4 bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
-          <div className="container mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 text-balance">Nossa Coleção</h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
-              Descubra produtos artesanais únicos para cada cantinho da sua casa
-            </p>
-          </div>
-        </section>
- <WhatsAppButton
-
-        message="Olá, gostaria de mais informações!"
-        buttonColor={buttonColor}
-        buttonText="Fale conosco"
-        position="bottom-right"
+        <FloatingIconsHero
+        title="Conheça nossos produtos"
+        subtitle="Descubra nossa coleção abaixo."
+        ctaText="Clique para explorar"
+        ctaHref="#nossos-produtos"
+        icons={fashionIcons}
+        targetSectionId="nossos-produtos" // ID da seção alvo
       />
 
+        <WhatsAppButton
+          message="Olá, gostaria de mais informações!"
+          buttonColor={buttonColor}
+          buttonText=""
+          position="bottom-right"
+        />
+
         <section className="py-12 md:py-20 px-4">
-          <div className="container mx-auto">
+          <div className="container mx-auto" id="nossos-produtos">
+            {/* Category Filters */}
             <div className="flex flex-wrap gap-2 md:gap-3 mb-12 md:mb-16 justify-center">
               {categories.map((category) => (
                 <Badge
@@ -223,62 +258,11 @@ const [buttonColor, setButtonColor] = useState('#25D366');
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-              {filteredProducts.map((product, index) => (
-                <Card
-                  key={index}
-                  className="group overflow-hidden border hover:border-primary/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
-                  onClick={() => handleProductClick(product)}
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                    animation: "fadeIn 0.5s ease-out forwards",
-                  }}
-                >
-                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted relative">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-3 p-6">
-                        <div className="w-16 h-16 md:w-20 md:h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <div className="text-3xl md:text-4xl">🎬</div>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs md:text-sm font-semibold text-foreground">Carrossel de Mídia</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Adicione fotos e vídeos</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-4 md:p-5">
-                    <div className="mb-2 md:mb-3">
-                      <Badge variant="secondary" className="text-xs font-semibold">
-                        {product.category}
-                      </Badge>
-                    </div>
-                    <h3 className="text-base md:text-lg font-bold mb-2">{product.name}</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4 leading-relaxed line-clamp-2">
-                      {product.description}
-                    </p>
-                    {product.price && (
-                      <p className="text-sm md:text-base font-bold text-primary mb-3">{product.price}</p>
-                    )}
-                    <div className="flex flex-wrap gap-1.5 md:gap-2">
-                      {product.colors.slice(0, 3).map((color, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] md:text-xs bg-muted px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium"
-                        >
-                          {color}
-                        </span>
-                      ))}
-                      {product.colors.length > 3 && (
-                        <span className="text-[10px] md:text-xs bg-muted px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium">
-                          +{product.colors.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {/* Products Grid */}
+            <ProductRevealGridAdapter
+              products={filteredProducts}
+              columns={4}
+            />
           </div>
         </section>
 
@@ -298,8 +282,6 @@ const [buttonColor, setButtonColor] = useState('#25D366');
       </main>
 
       <Footer />
-
-      <ProductModal product={selectedProduct} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

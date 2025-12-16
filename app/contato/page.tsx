@@ -89,7 +89,7 @@ export default function ContatoPage() {
 
         message="Olá, gostaria de mais informações!"
         buttonColor={'#25D366'}
-        buttonText="Fale conosco"
+        buttonText=""
         position="bottom-right"
       />
 
