@@ -70,7 +70,7 @@ const SectionProducts = () => {
           ],
           button: {
             label: "Lembrancinhas",
-            link: "/produtos/lembrancinhas",
+            link: "/produtos/lembrancas",
           },
         },
         {

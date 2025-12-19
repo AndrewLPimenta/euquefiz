@@ -33,6 +33,25 @@ export function Header() {
     }
   }, [mobileMenuOpen])
 
+  // Fechar menu de produtos quando clicar fora (para desktop)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      const productsButton = document.querySelector('[data-products-button]')
+      const dropdown = document.querySelector('[data-products-dropdown]')
+      
+      if (productsButton && dropdown && 
+          !productsButton.contains(target) && 
+          !dropdown.contains(target) &&
+          window.innerWidth >= 768) {
+        setProductsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const navigation = [
     { name: "Início", href: "/" },
     { 
@@ -44,56 +63,42 @@ export function Header() {
           category: "Todos",
           items: [
             { name: "Todos", href: "/produtos" },
-            // { name: "Tênis", href: "/produtos/tenis" },
-            // { name: "Sapatos", href: "/produtos/sapatos" },
           ]
         },
         {
           category: "Calçados",
           items: [
             { name: "Sandálias", href: "/produtos/sandalias" },
-            // { name: "Tênis", href: "/produtos/tenis" },
-            // { name: "Sapatos", href: "/produtos/sapatos" },
           ]
         },
         {
           category: "Acessórios",
           items: [
             { name: "Bolsas", href: "/produtos/bolsas" },
-            // { name: "Cintos", href: "/produtos/cintos" },
-            // { name: "Relógios", href: "/produtos/relogios" },
           ]
         },
         {
           category: "Casa",
           items: [
             { name: "Decoração", href: "/produtos/casa" },
-            // { name: "Cozinha", href: "/produtos/cozinha" },
-            // { name: "Banheiro", href: "/produtos/banheiro" },
           ]
         },
         {
           category: "Religião",
           items: [
             { name: "Cristianismo", href: "/produtos/cristianismo" },
-            // { name: "Lembranças", href: "/produtos/lembrancas" },
-            // { name: "Espiritualidade", href: "/produtos/espiritualidade" },
           ]
         },
         {
           category: "Datas comemorativas",
           items: [
             { name: "Lembrancinhas", href: "/produtos/lembrancas" },
-            // { name: "Cozinha", href: "/produtos/cozinha" },
-            // { name: "Banheiro", href: "/produtos/banheiro" },
           ]
         },
         {
           category: "Produtividade",
           items: [
             { name: "Organizadores", href: "/produtos/organizacao" },
-            // { name: "Cozinha", href: "/produtos/cozinha" },
-            // { name: "Banheiro", href: "/produtos/banheiro" },
           ]
         },
       ]
@@ -111,12 +116,17 @@ export function Header() {
       {/* Overlay escuro com blur */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-all duration-300 md:hidden",
-          mobileMenuOpen
+          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-all duration-300",
+          mobileMenuOpen || (productsMenuOpen && window.innerWidth < 768)
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         )}
-        onClick={() => setMobileMenuOpen(false)}
+        onClick={() => {
+          setMobileMenuOpen(false)
+          if (window.innerWidth < 768) {
+            setProductsMenuOpen(false)
+          }
+        }}
       />
 
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -136,17 +146,20 @@ export function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
               {navigation.map((item) => (
-                <div key={item.href} className="relative group">
+                <div key={item.href} className="relative">
                   {item.hasDropdown ? (
                     <>
                       <button
-                        onClick={() => setProductsMenuOpen(!productsMenuOpen)}
+                        data-products-button
+                        onClick={() => {
+                          setProductsMenuOpen(!productsMenuOpen)
+                        }}
                         className={cn(
                           "text-sm font-medium transition-all duration-300 hover:text-primary",
-                          "flex items-center gap-1",
+                          "flex items-center gap-1 px-3 py-2 rounded-lg",
                           pathname.startsWith("/produtos") 
-                            ? "text-foreground" 
-                            : "text-muted-foreground"
+                            ? "text-foreground bg-primary/5" 
+                            : "text-muted-foreground hover:bg-primary/10"
                         )}
                       >
                         {item.name}
@@ -156,55 +169,62 @@ export function Header() {
                         )} />
                       </button>
                       
-                      {/* Dropdown Desktop */}
+                      {/* Dropdown Desktop - Agora abre no clique */}
                       <div
+                        data-products-dropdown
                         className={cn(
-                          "absolute top-full left-1/2 -translate-x-1/2 mt-6",
+                          "absolute top-full left-0 mt-2",
                           "w-96 bg-background border border-border rounded-xl shadow-2xl",
                           "transition-all duration-300 origin-top",
-                          "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto",
-                          "grid grid-cols-2 gap-6 p-6"
+                          "opacity-0 scale-95 pointer-events-none",
+                          productsMenuOpen 
+                            ? "opacity-100 scale-100 pointer-events-auto" 
+                            : ""
                         )}
-                        onMouseLeave={() => setProductsMenuOpen(false)}
                       >
-                        {item.submenu?.map((section) => (
-                          <div key={section.category} className="space-y-3">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                              {section.category}
-                            </h3>
-                            <ul className="space-y-2">
-                              {section.items.map((subItem) => (
-                                <li key={subItem.href}>
-                                  <Link
-                                    href={subItem.href}
-                                    className={cn(
-                                      "text-sm font-medium transition-all duration-300",
-                                      "px-3 py-2 rounded-lg hover:bg-primary/10 block",
-                                      pathname === subItem.href
-                                        ? "text-primary bg-primary/5"
-                                        : "text-foreground"
-                                    )}
-                                  >
-                                    {subItem.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
+                        <div className="grid grid-cols-2 gap-6 p-6">
+                          {item.submenu?.map((section) => (
+                            <div key={section.category} className="space-y-3">
+                              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {section.category}
+                              </h3>
+                              <ul className="space-y-2">
+                                {section.items.map((subItem) => (
+                                  <li key={subItem.href}>
+                                    <Link
+                                      href={subItem.href}
+                                      onClick={() => setProductsMenuOpen(false)}
+                                      className={cn(
+                                        "text-sm font-medium transition-all duration-300",
+                                        "px-3 py-2 rounded-lg hover:bg-primary/10 block",
+                                        pathname === subItem.href
+                                          ? "text-primary bg-primary/5"
+                                          : "text-foreground"
+                                      )}
+                                    >
+                                      {subItem.name}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </>
                   ) : (
                     <Link
                       href={item.href}
                       className={cn(
-                        "text-sm font-medium transition-all duration-300 hover:text-primary relative group",
-                        pathname === item.href ? "text-foreground" : "text-muted-foreground",
+                        "text-sm font-medium transition-all duration-300 hover:text-primary relative group px-3 py-2 rounded-lg hover:bg-primary/10",
+                        pathname === item.href 
+                          ? "text-foreground bg-primary/5" 
+                          : "text-muted-foreground",
                       )}
                     >
                       {item.name}
                       {pathname === item.href && (
-                        <span className="absolute -bottom-[21px] left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary" />
+                        <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary" />
                       )}
                     </Link>
                   )}
@@ -226,7 +246,7 @@ export function Header() {
                 )}
               </Button>
 
-              {/* Botão Hamburguer/X - Sempre visível com animação */}
+              {/* Botão Hamburguer/X */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -261,10 +281,10 @@ export function Header() {
           </div>
         </div>
 
-        {/* Menu móvel - Cobre 80% da tela horizontalmente e 100% verticalmente */}
+        {/* Menu móvel */}
         <div
           className={cn(
-            "fixed top-0 right-0 h-full z-40 md:hidden border border-",
+            "fixed top-0 right-0 h-full z-40 md:hidden border",
             "w-[80%] max-w-sm bg-background",
             "transform transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             "shadow-2xl shadow-black/30",
@@ -283,9 +303,6 @@ export function Header() {
               <span className="text-lg font-semibold text-foreground">
                 Menu
               </span>
-              <div className="text-sm text-muted-foreground">
-
-              </div>
             </div>
           </div>
 
@@ -337,7 +354,10 @@ export function Header() {
                                 <li key={subItem.href}>
                                   <Link
                                     href={subItem.href}
-                                    onClick={() => setMobileMenuOpen(false)}
+                                    onClick={() => {
+                                      setMobileMenuOpen(false)
+                                      setProductsMenuOpen(false)
+                                    }}
                                     className={cn(
                                       "text-sm font-medium transition-all duration-300",
                                       "px-4 py-3 rounded-lg hover:bg-primary/10 block",
@@ -383,7 +403,7 @@ export function Header() {
                   >
                     {item.name}
                     <span className={cn(
-                      "absolute left-0 top-0 h-full w-1 to-secondary",
+                      "absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-primary to-secondary",
                       "transition-transform duration-300",
                       pathname === item.href
                         ? "translate-x-0"
