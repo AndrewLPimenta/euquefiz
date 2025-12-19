@@ -41,6 +41,14 @@ export function Header() {
       hasDropdown: true,
       submenu: [
         {
+          category: "Todos",
+          items: [
+            { name: "Todos", href: "/produtos" },
+            // { name: "Tênis", href: "/produtos/tenis" },
+            // { name: "Sapatos", href: "/produtos/sapatos" },
+          ]
+        },
+        {
           category: "Calçados",
           items: [
             { name: "Sandálias", href: "/produtos/sandalias" },
