@@ -12,6 +12,7 @@ interface ProductRevealCardProps {
   price?: number
   originalPrice?: number
   image?: string
+  hoverImage?: string
   description?: string
   rating?: number
   reviewCount?: number
@@ -22,11 +23,24 @@ interface ProductRevealCardProps {
   className?: string
 }
 
+
+const imageVariants = {
+  rest: { opacity: 1 },
+  hover: { opacity: 0 },
+}
+
+const hoverImageVariants = {
+  rest: { opacity: 0 },
+  hover: { opacity: 1 },
+}
+
+
 export function ProductRevealCard({
   name = "Premium Wireless Headphones",
   price = 199,
   originalPrice = 299,
   image = "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&h=600&fit=crop",
+  hoverImage = "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&h=600&fit=crop",
   description = "Experience studio-quality sound with advanced noise cancellation and 30-hour battery life.",
   rating = 4.8,
   reviewCount = 124,
@@ -36,6 +50,8 @@ export function ProductRevealCard({
   enableAnimations = true,
   className,
 }: ProductRevealCardProps) {
+
+
   const [isFavorite, setIsFavorite] = useState(false)
   const shouldReduceMotion = useReducedMotion()
   const shouldAnimate = enableAnimations && !shouldReduceMotion
@@ -57,20 +73,19 @@ export function ProductRevealCard({
     onViewDetails?.()
   }
 
-  // Variants definitions (faltava esta parte!)
   const containerVariants = {
-    rest: { 
+    rest: {
       scale: 1,
       y: 0,
       filter: "blur(0px)",
     },
-    hover: shouldAnimate ? { 
-      scale: 1.03, 
+    hover: shouldAnimate ? {
+      scale: 1.03,
       y: -8,
       filter: "blur(0px)",
-      transition: { 
-        type: "spring", 
-        stiffness: 300, 
+      transition: {
+        type: "spring",
+        stiffness: 300,
         damping: 30,
         mass: 0.8,
       }
@@ -78,13 +93,13 @@ export function ProductRevealCard({
   }
 
   const overlayVariants = {
-    rest: { 
-      y: "100%", 
+    rest: {
+      y: "100%",
       opacity: 0,
       filter: "blur(4px)",
     },
-    hover: { 
-      y: "0%", 
+    hover: {
+      y: "0%",
       opacity: 1,
       filter: "blur(0px)",
       transition: {
@@ -99,13 +114,13 @@ export function ProductRevealCard({
   }
 
   const contentVariants = {
-    rest: { 
-      opacity: 0, 
+    rest: {
+      opacity: 0,
       y: 20,
       scale: 0.95,
     },
-    hover: { 
-      opacity: 1, 
+    hover: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: {
@@ -119,13 +134,13 @@ export function ProductRevealCard({
 
   const buttonVariants_motion = {
     rest: { scale: 1, y: 0 },
-    hover: shouldAnimate ? { 
-      scale: 1.05, 
+    hover: shouldAnimate ? {
+      scale: 1.05,
       y: -2,
-      transition: { 
-        type: "spring", 
-        stiffness: 400, 
-        damping: 25 
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 25
       }
     } : {},
     tap: shouldAnimate ? { scale: 0.95 } : {},
@@ -133,15 +148,16 @@ export function ProductRevealCard({
 
   const favoriteVariants = {
     rest: { scale: 1, rotate: 0 },
-    favorite: { 
-      scale: [1, 1.3, 1], 
+    favorite: {
+      scale: [1, 1.3, 1],
       rotate: [0, 10, -10, 0],
-      transition: { 
+      transition: {
         duration: 0.5,
         ease: "easeInOut"
       }
     },
   }
+
 
   return (
     <motion.div
@@ -158,16 +174,33 @@ export function ProductRevealCard({
     >
       {/* Image Container */}
       <div className="relative overflow-hidden aspect-square">
+        {/* Imagem principal */}
         <motion.img
           src={image}
           alt={name}
-          className="h-full w-full object-cover"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="absolute inset-0 h-full w-full object-cover"
+          variants={imageVariants}
+          transition={{ duration: 0.3 }}
         />
+
+        {/* Imagem de hover */}
+        {hoverImage && (
+          <motion.img
+            src={hoverImage}
+            alt={name}
+            className="absolute inset-0 h-full w-full object-cover hidden md:block"
+            variants={hoverImageVariants}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-        
-        {/* Favorite Button */}
-        {/* <motion.button
+      </div>
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+      {/* Favorite Button */}
+      {/* <motion.button
           onClick={handleFavorite}
           variants={favoriteVariants}
           animate={isFavorite ? "favorite" : "rest"}
@@ -181,8 +214,8 @@ export function ProductRevealCard({
           <Heart className={cn("w-4 h-4", isFavorite && "fill-current")} />
         </motion.button> */}
 
-        {/* Discount Badge */}
-        {originalPrice && originalPrice > price && (
+      {/* Discount Badge */}
+      {/* {originalPrice && originalPrice > price && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, x: 20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -192,7 +225,7 @@ export function ProductRevealCard({
             {Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
           </motion.div>
         )}
-      </div>
+      </div> */}
 
       {/* Content */}
       <div className="p-6 space-y-3">
@@ -204,8 +237,8 @@ export function ProductRevealCard({
                 key={i}
                 className={cn(
                   "w-4 h-4",
-                  i < Math.floor(rating) 
-                    ? "text-yellow-400 fill-current" 
+                  i < Math.floor(rating)
+                    ? "text-yellow-400 fill-current"
                     : "text-muted-foreground"
                 )}
               />
@@ -218,7 +251,7 @@ export function ProductRevealCard({
 
         {/* Product Info */}
         <div className="space-y-1">
-          <motion.h3 
+          <motion.h3
             className="text-xl font-bold leading-tight tracking-tight"
             initial={{ opacity: 0.9 }}
             whileHover={{ opacity: 1 }}
@@ -226,7 +259,7 @@ export function ProductRevealCard({
           >
             {name}
           </motion.h3>
-          
+
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold text-primary">
               R$ {price.toFixed(2).replace('.', ',')}
@@ -263,7 +296,7 @@ export function ProductRevealCard({
               whileHover="hover"
               whileTap="tap"
               className={cn(
-                buttonVariants({ variant: "default" }), 
+                buttonVariants({ variant: "default" }),
                 "w-full h-12 font-medium",
                 "bg-gradient-to-r from-primary to-primary/90",
                 "hover:from-primary/90 hover:to-primary",
@@ -273,7 +306,7 @@ export function ProductRevealCard({
               <ShoppingCart className="w-4 h-4 mr-2" />
               Adicionar ao Carrinho
             </motion.button>
-            
+
             <motion.button
               onClick={handleViewDetails}
               variants={buttonVariants_motion}
@@ -281,7 +314,7 @@ export function ProductRevealCard({
               whileHover="hover"
               whileTap="tap"
               className={cn(
-                buttonVariants({ variant: "outline" }), 
+                buttonVariants({ variant: "outline" }),
                 "w-full h-10 font-medium"
               )}
             >

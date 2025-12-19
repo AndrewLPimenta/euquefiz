@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react';
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
@@ -5,7 +7,8 @@ import { ArrowLeft } from 'lucide-react';
 
 interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
   logo?: {
-    url: string;
+    lightUrl?: string;
+    darkUrl?: string;
     alt: string;
     text?: string;
   };
@@ -17,17 +20,11 @@ interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
     href: string;
   };
   backgroundImage: string;
-  contactInfo: {
-    website: string;
-    phone: string;
-    address: string;
-  };
 }
 
 const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
-  ({ className, logo, slogan, title, subtitle, callToAction, backgroundImage, contactInfo, ...props }, ref) => {
-
-    // Animation variants for the container to orchestrate children animations
+  ({ className, logo, slogan, title, subtitle, callToAction, backgroundImage, ...props }, ref) => {
+    
     const containerVariants = {
       hidden: { opacity: 0 },
       visible: {
@@ -39,7 +36,6 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
       },
     };
 
-    // Animation variants for individual text/UI elements
     const itemVariants = {
       hidden: { y: 20, opacity: 0 },
       visible: {
@@ -68,17 +64,29 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
         <div className="flex w-full flex-col justify-between p-8 md:w-1/2 md:p-12 lg:w-3/5 lg:p-16">
           {/* Top Section: Logo & Main Content */}
           <div>
-           <motion.header className="mb-3" variants={itemVariants}>
-  {logo && (
-    <div className="">
-      <img 
-        src={logo.url} 
-        alt={logo.alt} 
-        className="w-24 h-24 object-contain" 
-      />
-    </div>
-  )}
-</motion.header>
+            <motion.header className="mb-3" variants={itemVariants}>
+              <div className="relative">
+                {/* Logo para tema claro (visível por padrão) */}
+                <img 
+                  src={logo?.lightUrl || '/logo-hero-claro.png'} 
+                  alt={logo?.alt || "Logo"} 
+                  className="w-24 h-24 object-contain dark:hidden" 
+                />
+                
+                {/* Logo para tema escuro (escondido por padrão) */}
+                <img 
+                  src={logo?.darkUrl || '/logo-hero-escuro.png'} 
+                  alt={logo?.alt || "Logo"} 
+                  className="hidden w-24 h-24 object-contain dark:block" 
+                />
+                
+                {logo?.text && (
+                  <span className="mt-2 block text-sm font-semibold text-muted-foreground">
+                    {logo.text}
+                  </span>
+                )}
+              </div>
+            </motion.header>
 
             <motion.main variants={containerVariants}>
               <motion.h1 className="text-4xl font-bold leading-tight text-foreground md:text-5xl" variants={itemVariants}>
@@ -122,7 +130,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
         </div>
 
         {/* Right Side: Image with Clip Path Animation */}
-        <motion.div
+       <motion.div
           className="w-full min-h-[300px] bg-cover bg-center md:w-1/2 md:min-h-full lg:w-2/5"
           style={{
             backgroundImage: `url(${backgroundImage})`,
@@ -130,8 +138,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
           initial={{ clipPath: 'polygon(100% 0, 100% 0, 100% 100%, 100% 100%)' }}
           animate={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0% 100%)' }}
           transition={{ duration: 1.8, ease: "circOut" }}
-        >
-        </motion.div>
+        />
       </motion.section>
     );
   }

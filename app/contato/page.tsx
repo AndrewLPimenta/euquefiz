@@ -75,7 +75,7 @@ export default function ContatoPage() {
         {/* Hero Section */}
         <section className="py-16 px-4 bg-gradient-to-br from-primary/10 via-secondary/10 to-background">
           <div className="container mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-balance">Entre em Contato</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-balance">Entre em Contato</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
               Estamos aqui para responder suas dúvidas e ajudar você a encontrar o produto perfeito
             </p>
@@ -98,7 +98,7 @@ export default function ContatoPage() {
               {/* Contact Form */}
               <Card className="border-2">
                 <CardHeader>
-                  <CardTitle className="text-2xl font-serif">Envie sua Mensagem</CardTitle>
+                  <CardTitle className="text-2xl">Envie sua Mensagem</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
@@ -163,7 +163,7 @@ export default function ContatoPage() {
               {/* Contact Info */}
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-2xl font-serif font-bold mb-4">Informações de Contato</h2>
+                  <h2 className="text-2xl font-bold mb-4">Informações de Contato</h2>
                   <p className="text-muted-foreground leading-relaxed mb-8">
                     Fique à vontade para entrar em contato através de qualquer um dos nossos canais. Estamos ansiosos
                     para ouvir você!
@@ -199,15 +199,15 @@ export default function ContatoPage() {
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p className="flex justify-between">
                         <span>Segunda a Sexta:</span>
-                        <span className="font-medium text-foreground">9h às 18h</span>
+                        <span className="font-medium text-foreground">-- às --</span>
                       </p>
                       <p className="flex justify-between">
                         <span>Sábado:</span>
-                        <span className="font-medium text-foreground">9h às 14h</span>
+                        <span className="font-medium text-foreground">-- às --</span>
                       </p>
                       <p className="flex justify-between">
                         <span>Domingo:</span>
-                        <span className="font-medium text-foreground">Fechado</span>
+                        <span className="font-medium text-foreground">-- às --</span>
                       </p>
                     </div>
                   </CardContent>
@@ -221,7 +221,7 @@ export default function ContatoPage() {
         <section className="py-16 px-4 bg-muted/50">
           <div className="container mx-auto max-w-4xl">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-serif font-bold mb-4">Dúvidas Frequentes</h2>
+              <h2 className="text-3xl font-bold mb-4">Dúvidas Frequentes</h2>
             </div>
 
             <div className="space-y-4">

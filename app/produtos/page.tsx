@@ -22,6 +22,7 @@ import {
   GiBelt,
   GiWallet
 } from 'react-icons/gi';
+import { SectionProducts } from "@/components/section-products"
 import { SandaliasPromoSection } from "@/components/SandaliasPromoSection"
 
 interface Product {
@@ -74,8 +75,8 @@ export default function ProdutosPage() {
       rating: 4.8,
       reviewCount: 23,
       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
@@ -91,10 +92,9 @@ export default function ProdutosPage() {
       originalPrice: "R$ 120,00",
       rating: 4.7,
       reviewCount: 15,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
-
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
       ]
     },
     {
@@ -108,10 +108,9 @@ export default function ProdutosPage() {
       price: "R$ 75,00",
       rating: 4.9,
       reviewCount: 31,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
-
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
       ]
     },
     {
@@ -126,9 +125,9 @@ export default function ProdutosPage() {
       originalPrice: "R$ 50,00",
       rating: 4.6,
       reviewCount: 18,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
@@ -143,9 +142,9 @@ export default function ProdutosPage() {
       price: "R$ 120,00",
       rating: 4.9,
       reviewCount: 27,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
@@ -161,9 +160,9 @@ export default function ProdutosPage() {
       originalPrice: "R$ 75,00",
       rating: 5.0,
       reviewCount: 42,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
@@ -178,9 +177,9 @@ export default function ProdutosPage() {
       price: "R$ 42,00",
       rating: 4.7,
       reviewCount: 19,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
@@ -196,76 +195,85 @@ export default function ProdutosPage() {
       originalPrice: "R$ 150,00",
       rating: 4.8,
       reviewCount: 34,
-       media: [
-        { type: "image", url: "./produto-default.png" },
-        { type: "video", url: "/video-default.mp4", thumbnail: "./capa-default.png" },
+      media: [
+        { type: "image", url: "/placeholder.svg" },
+        { type: "video", url: "/video-default.mp4", thumbnail: "/placeholder.svg" },
 
       ]
     },
   ]
 
   const sandalias = [
-  {
-    id: 101,
-    name: "Sandália Artesanal Salmão",
-    description: "Conforto e elegância para o dia a dia",
-    colors: ["Salmão", "Verde Água"],
-    category: "Sandálias",
-    price: "R$ 149,00",
-    media: [{ type: "image", url: "./produto-default.png" }]
-  },
-  {
-    id: 102,
-    name: "Sandália Artesanal Verde Água",
-    description: "Leveza e estilo em cada passo",
-    colors: ["Verde Água"],
-    category: "Sandálias",
-    price: "R$ 149,00",
-    media: [{ type: "image", url: "./produto-default.png" }]
-  }
-]
+    {
+      id: 101,
+      name: "Sandália Artesanal Salmão",
+      description: "Conforto e elegância para o dia a dia",
+      colors: ["Salmão", "Verde Água"],
+      category: "Sandálias",
+      price: "R$ 149,00",
+      media: [{ type: "image", url: "/placeholder.svg" }]
+    },
+    {
+      id: 102,
+      name: "Sandália  Prateada",
+      description: "Leveza e estilo em cada passo",
+      colors: ["Verde Água"],
+      category: "Sandálias",
+      price: "R$ 149,00",
+      media: [{ type: "image", url: "/placeholder.svg" }]
+    }, {
+      id: 103,
+      name: "Sandália Dourada",
+      description: "Leveza e estilo em cada passo",
+      colors: ["Verde Água"],
+      category: "Sandálias",
+      price: "R$ 149,00",
+      media: [{ type: "image", url: "/placeholder.svg" }]
+    }
+  ]
 
+  const categories = ["Todos", "Sandálias", "Organização", "Acessórios", "Mesa", "Banheiro", "Decoração"]
 
-  const categories = ["Todos","Sandálias" ,"Organização", "Acessórios", "Mesa", "Banheiro", "Decoração"]
-
-
-  
-  const filteredProducts = selectedCategory === "Todos" 
-    ? products 
+  const filteredProducts = selectedCategory === "Todos"
+    ? products
     : products.filter((p) => p.category === selectedCategory)
 
-      if (selectedCategory === "Todos") {
+  if (selectedCategory === "Todos") {
     categories.splice(0, 1)
 
   }
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
+      <FloatingIconsHero
+          title="Conheça nossos produtos"
+          subtitle="Descubra nossa coleção abaixo."
+          ctaText="Clique para explorar"
+          ctaHref="#nossos-produtos"
+          icons={fashionIcons}
+          targetSectionId="nossos-produtos"
+        />
       <main className="flex-1">
         {/* Hero Section */}
-        <FloatingIconsHero
-        title="Conheça nossos produtos"
-        subtitle="Descubra nossa coleção abaixo."
-        ctaText="Clique para explorar"
-        ctaHref="#nossos-produtos"
-        icons={fashionIcons}
-        targetSectionId="nossos-produtos" // ID da seção alvo
-      />
-
+       
+ <div className="flex " id="nossos-produtos">
+        <SandaliasPromoSection
+          products={sandalias}
+          
+        />
+      </div>
         <WhatsAppButton
           message="Olá, gostaria de mais informações!"
           buttonColor={buttonColor}
           buttonText=""
           position="bottom-right"
         />
-<SandaliasPromoSection
- products={sandalias}
-/>
+
         <section className="py-12 md:py-20 px-4">
-          
-          <div className="container mx-auto" id="nossos-produtos">
-            {/* Category Filters */}
+
+          <div className="container mx-auto" >
+          <SectionProducts/>
+            {/* Category Filters
             <div className="flex flex-wrap gap-2 md:gap-3 mb-12 md:mb-16 justify-center">
               {categories.map((category) => (
                 <Badge
@@ -284,11 +292,11 @@ export default function ProdutosPage() {
               ))}
             </div>
 
-            {/* Products Grid */}
+
             <ProductRevealGridAdapter
               products={filteredProducts}
               columns={4}
-            />
+            /> */}
           </div>
         </section>
 
@@ -296,11 +304,11 @@ export default function ProdutosPage() {
         <section className="py-16 md:py-20 px-4 bg-muted/30">
           <div className="container mx-auto text-center">
             <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-balance">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-balance">
                 Gostou de algum produto?
               </h2>
               <p className="text-sm md:text-base lg:text-lg text-muted-foreground leading-relaxed">
-                Entre em contato para saber mais sobre cores, tamanhos e personalizações
+                Entre em contato para saber mais sobre cores, tamanhos e personalizações.
               </p>
             </div>
           </div>

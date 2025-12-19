@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Sparkles, Users, Award } from "lucide-react"
 import WhatsAppButton from "@/components/whatsapp" 
 import { useState } from "react"
+import * as React from "react";
+import { TestimonialSlider } from "@/components/ui/testimonial-slider-1";
+
 export default function SobrePage() {
 
 const [buttonColor, setButtonColor] = useState('#25D366');
@@ -79,9 +82,9 @@ const [buttonColor, setButtonColor] = useState('#25D366');
         </section>
 
         {/* Image Section */}
-        <section className="py-8 px-4 bg-muted/50">
+        <section className="py-8 px-4">
           <div className="container mx-auto">
-            <div className="aspect-[21/9] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+            <div className="aspect-[21/9] rounded-2xl overflow-hidden ">
               <img
                 src="/placeholder.svg?height=600&width=1400"
                 alt="Processo artesanal"

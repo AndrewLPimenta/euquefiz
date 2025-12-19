@@ -5,102 +5,81 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ArrowRight, Heart, Sparkles, Home } from "lucide-react"
-import WhatsAppButton from "@/components/whatsapp" 
+import WhatsAppButton from "@/components/whatsapp"
 import { useState } from "react"
 import { HeroSection } from "@/components/ui/hero-section-2"
+import { ShuffleHero } from "@/components/ui/shuffle-grid";
+import FeatureAccordionSection from "@/components/ui/feature-accordion-section"
+import * as React from "react";
+import CeoHome from "@/components/ui/ceo-home"
+import ProvaSocial from "@/components/ui/social-prova"
+
 export default function HomePage() {
 
   const [buttonColor, setButtonColor] = useState('#25D366');
-  
-
-  const featuredProducts = [
-    {
-      name: "Necessaire",
-      category: "Organização",
-      description: "Organize seus itens com estilo e praticidade",
-    },
-    {
-      name: "Cachepô Decorativo",
-      category: "Decoração",
-      description: "Traga vida e cor para seus ambientes",
-    },
-    {
-      name: "Kit Lavabo",
-      category: "Banheiro",
-      description: "Elegância e funcionalidade para seu lavabo",
-    },
-  ]
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
- <WhatsAppButton
+      <WhatsAppButton
         message="Olá, Danielle!"
         buttonColor={'#25D366'}
         buttonText=""
         position="bottom-right"
       />
       <main className="flex-1">
-        
-      <HeroSection
-        // logo={{
-        //   url: "/hero-logo.png",
 
+        <HeroSection
+          logo={{
+            alt: "Minha Logo",
+            lightUrl: "/logo-hero-claro.png",
+            darkUrl: "/logo-hero-escuro.png"
+          }}
 
-        // }}
-        // slogan="Arte que transforma espaços"
-        title={
-          <>
-            Produtos
-            <br />
-            <span className="text-primary">Únicos</span> pra você
-          </>
-        }
-        subtitle="Descubra peças exclusivas feitas sob medida. Cada item conta uma história e traz personalidade."
-        callToAction={{
-          text: "Ver Produtos",
-          href: "/produtos"
-        }}
-        
-        backgroundImage="./banner.png"
+          slogan="Arte que transforma espaços"
+          title={
+            <>
+              Produtos
+              <br />
+              <span className="text-primary">Únicos</span> pra você
+            </>
+          }
+          subtitle="Descubra peças exclusivas feitas sob medida. Cada item conta uma história e traz personalidade."
+          callToAction={{
+            text: "Ver Produtos",
+            href: "/produtos"
+          }}
 
-        className="min-h-screen"
-      />
+          backgroundImage="/placeholder.svg"
+          className="min-h-screen"
+        />
+        <div className="flex min-h-screen w-full flex-col justify-center">
+          <ShuffleHero />
+        </div>
 
-        {/* <section className="relative py-24 md:py-32 lg:py-40 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-background -z-10" />
-          <div className="container mx-auto text-center">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-montserrat font-bold tracking-tight text-balance leading-tight">
-                Produtos artesanais para sua{" "}
-                <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                  casa dos sonhos
-                </span>
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed text-pretty max-w-2xl mx-auto">
-                Cada peça é cuidadosamente criada para transformar sua casa em um lar ainda mais acolhedor e especial
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Button asChild size="lg" className="text-base group transition-all duration-300 hover:scale-105">
-                  <Link href="/produtos">
-                    Ver Coleções
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="text-base transition-all duration-300 hover:scale-105 bg-transparent border boder-primary-500"
-                >
-                  <Link href="/sobre">Sobre nós</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section> */}
-       
-        {/* Features Section */}
+        <div className="flex min-h-screen w-full flex-col justify-center px-4">
+          <h2 className="mb-6 text-center text-3xl font-bold md:text-4xl">
+            Garantimos a
+            <span className="text-primary"> você:</span>
+          </h2>
+          <FeatureAccordionSection />
+        </div>
+        <div className="flex min-h-screen w-full flex-col justify-center px-4">
+          <h1 className="mb-6 text-center text-3xl font-bold md:text-4xl">
+            <span className="text-primary">Nossos</span> Clientes.
+          </h1>
+          <ProvaSocial
+          />
+        </div>
+        <div className="flex h-55 w-full flex-col justify-center px-4">
+        </div>
+
+        <div className="flex min-h-screen w-full flex-col justify-center px-4">
+          <h1 className="mb-6 text-center text-3xl font-bold md:text-4xl">
+            <span className="text-primary">CEO</span> 
+          </h1>
+          <CeoHome />
+        </div>
         <section className="py-20 px-4 bg-muted/30">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -110,9 +89,9 @@ export default function HomePage() {
                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                       <Heart className="h-7 w-7 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold">Feito à Mão</h3>
+                    <h3 className="text-xl font-semibold">Feito pra você</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Cada peça é confeccionada artesanalmente com atenção aos mínimos detalhes
+                      Cada item é especial, feito com atenção aos mínimos detalhes.
                     </p>
                   </div>
                 </CardContent>
@@ -126,7 +105,7 @@ export default function HomePage() {
                     </div>
                     <h3 className="text-xl font-semibold">Design Único</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Produtos exclusivos que tornam cada ambiente da sua casa especial
+                      Produtos exclusivos que tornam cada experiência única e especial.
                     </p>
                   </div>
                 </CardContent>
@@ -138,9 +117,9 @@ export default function HomePage() {
                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                       <Home className="h-7 w-7 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold">Para Sua Casa</h3>
+                    <h3 className="text-xl font-semibold">Sinta-se em casa</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      De decoração a organização, tudo para deixar seu lar mais bonito
+                      Cada peça foi cuidadosamente projetada para proporcionar conforto e estilo.
                     </p>
                   </div>
                 </CardContent>
@@ -150,10 +129,10 @@ export default function HomePage() {
         </section>
 
         {/* Featured Products */}
-        <section className="py-20 px-4">
+        {/* <section className="py-20 px-4">
           <div className="container mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">Produtos em Destaque</h2>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">Produtos em Destaque</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-lg">
                 Conheça alguns dos nossos favoritos para transformar sua casa
               </p>
@@ -198,23 +177,22 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-        </section>
+        </section> */}
 
-        {/* CTA Section */}
         <section className="py-24 px-4 bg-gradient-to-br from-primary/10 via-secondary/10 to-background relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(64,224,208,0.1),transparent_50%)] -z-10" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(250,128,114,0.1),transparent_50%)] -z-10" />
           <div className="container mx-auto text-center">
             <div className="max-w-3xl mx-auto space-y-8">
-              <h2 className="text-3xl md:text-5xl font-serif font-bold text-balance">
-                Pronto para transformar sua casa?
+              <h2 className="text-3xl md:text-5xl font-bold text-balance">
+                Ficou com alguma duvida?
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-                Entre em contato e descubra como nossos produtos podem deixar seu lar ainda mais especial
+                Entre em contato e esclarecemos todas elas.
               </p>
               <Button asChild size="lg" className="text-base group transition-all duration-300 hover:scale-105">
                 <Link href="/contato">
-                Entrar em contato
+                  Entrar em contato
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </Button>

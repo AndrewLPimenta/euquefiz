@@ -41,7 +41,7 @@ export function SandaliasPromoSection({
   }, [products.length, interval])
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background py-15">
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background py-15 flex items-center justify-center">
       <div className="absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
 
       <div className="container mx-auto px-4 relative">
@@ -92,16 +92,13 @@ export function SandaliasPromoSection({
                 />
               </motion.div>
             </AnimatePresence>
-          </div>
-        </div>
-      </div>
-      <motion.div      initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-6 mt-9 text-center">
-      <Link
-  href="/produtos/sandalias"
-  className="
+              <motion.div initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="space-y-6 mt-9 text-center flex items-center justify-center align-center">
+        <Link
+          href="/produtos/sandalias"
+          className="
     group inline-flex items-center gap-3
     rounded-full bg-primary
     px-6 py-3 text-sm font-bold
@@ -111,11 +108,16 @@ export function SandaliasPromoSection({
     sm:px-7 sm:py-3.5
     md:px-8 md:py-4 md:text-base
   "
->
-  Ver todas as sandálias
-  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-</Link>
-</motion.div>
+        >
+          Saiba mais
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </motion.div>
+          </div>
+        </div>
+        
+      </div>
+    
     </section>
   )
 }

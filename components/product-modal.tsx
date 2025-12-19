@@ -81,8 +81,8 @@ export function ProductModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
- const currentMedia = media[currentMediaIndex] ?? media[0]
-const isVideo = currentMedia?.type === 'video'
+  const currentMedia = media[currentMediaIndex] ?? media[0]
+  const isVideo = currentMedia?.type === 'video'
 
   // Close modal on Escape key
   useEffect(() => {
@@ -91,7 +91,7 @@ const isVideo = currentMedia?.type === 'video'
         onClose();
       }
     };
-    
+
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
@@ -136,18 +136,18 @@ const isVideo = currentMedia?.type === 'video'
     }, 800);
   };
 
-const togglePlayPause = (e: React.MouseEvent) => {
-  e.stopPropagation()
-  if (!videoRef.current) return
+  const togglePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!videoRef.current) return
 
-  if (videoRef.current.paused) {
-    videoRef.current.play().catch(() => {})
-    setIsPlaying(true)
-  } else {
-    videoRef.current.pause()
-    setIsPlaying(false)
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => { })
+      setIsPlaying(true)
+    } else {
+      videoRef.current.pause()
+      setIsPlaying(false)
+    }
   }
-}
 
 
 
@@ -161,7 +161,7 @@ const togglePlayPause = (e: React.MouseEvent) => {
 
   const toggleFullscreen = () => {
     if (!modalRef.current) return;
-    
+
     if (!document.fullscreenElement) {
       modalRef.current.requestFullscreen();
       setIsFullscreen(true);
@@ -171,13 +171,13 @@ const togglePlayPause = (e: React.MouseEvent) => {
     }
   };
 
-const handleVideoEnded = () => {
-  if (!videoRef.current) return
+  const handleVideoEnded = () => {
+    if (!videoRef.current) return
 
-  videoRef.current.currentTime = 0
-  videoRef.current.play().catch(() => {})
-  setIsPlaying(true)
-}
+    videoRef.current.currentTime = 0
+    videoRef.current.play().catch(() => { })
+    setIsPlaying(true)
+  }
 
 
   const handleShare = () => {
@@ -195,27 +195,27 @@ const handleVideoEnded = () => {
 
 
   useEffect(() => {
-  if (open && media.length > 0) {
-    setCurrentMediaIndex(0)
-    setIsPlaying(false)
+    if (open && media.length > 0) {
+      setCurrentMediaIndex(0)
+      setIsPlaying(false)
+    }
+  }, [open, media])
+
+  if (!media || media.length === 0) {
+    media = [{ type: "image", url: "/placeholder.jpg" }]
   }
-}, [open, media])
 
-if (!media || media.length === 0) {
-  media = [{ type: "image", url: "/placeholder.jpg" }]
-}
+  useEffect(() => {
+    if (!open || !isVideo || !videoRef.current) return
 
-useEffect(() => {
-  if (!open || !isVideo || !videoRef.current) return
+    const video = videoRef.current
 
-  const video = videoRef.current
+    video.currentTime = 0
+    video.muted = true
 
-  video.currentTime = 0
-  video.muted = true
-
-  video.play().catch(() => {})
-  setIsPlaying(true)
-}, [open, currentMediaIndex, isVideo])
+    video.play().catch(() => { })
+    setIsPlaying(true)
+  }, [open, currentMediaIndex, isVideo])
 
 
   return (
@@ -230,7 +230,7 @@ useEffect(() => {
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
             onClick={onClose}
           />
-          
+
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
@@ -239,7 +239,7 @@ useEffect(() => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
 
               onClick={(e) => e.stopPropagation()}
             >
@@ -253,38 +253,38 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                 <X className="h-5 w-5" />
               </Button>
 
-<div className="grid md:grid-cols-2 h-full min-h-0">
+              <div className="grid md:grid-cols-2 h-full min-h-0">
 
                 {/* Left side - Media */}
                 <div className="relative bg-muted/30">
                   <div className="relative aspect-square overflow-hidden">
                     {isVideo ? (
                       <div className="relative w-full h-full">
-                    <video
-  ref={videoRef}
-  src={currentMedia.url}
-  poster={currentMedia.thumbnail}
-  className="object-cover w-full h-full cursor-pointer"
-  muted
-  playsInline
-  autoPlay
-  preload="auto"
-  onEnded={handleVideoEnded}
-  onClick={togglePlayPause}
-/>
+                        <video
+                          ref={videoRef}
+                          src={currentMedia.url}
+                          poster={currentMedia.thumbnail}
+                          className="object-cover w-full h-full cursor-pointer"
+                          muted
+                          playsInline
+                          autoPlay
+                          preload="auto"
+                          onEnded={handleVideoEnded}
+                          onClick={togglePlayPause}
+                        />
 
 
-                        
+
                         {/* Video controls */}
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 via-transparent to-transparent">
-                        
+
 
 
 
                           {/* Additional controls */}
                           <div className="absolute bottom-4 right-4 flex gap-2">
-                            
-                            
+
+
                           </div>
                         </div>
                       </div>
@@ -325,13 +325,12 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                       {media.map((item, index) => (
                         <button
                           key={index}
-                          className={`flex items-center justify-center transition-all ${
-                            index === currentMediaIndex
+                          className={`flex items-center justify-center transition-all ${index === currentMediaIndex
                               ? item.type === 'video'
                                 ? "bg-purple-500 w-6 h-2 rounded-full"
                                 : "bg-primary w-6 h-2 rounded-full"
                               : "bg-primary/30 w-2 h-2 rounded-full"
-                          }`}
+                            }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (isVideo && videoRef.current) {
@@ -341,7 +340,7 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                             setCurrentMediaIndex(index);
                           }}
                         >
-                          
+
                         </button>
                       ))}
                     </div>
@@ -353,11 +352,10 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                       {media.map((item, index) => (
                         <button
                           key={index}
-                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                            index === currentMediaIndex
+                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentMediaIndex
                               ? "border-primary"
                               : "border-transparent hover:border-primary/50"
-                          }`}
+                            }`}
                           onClick={() => {
                             if (isVideo && videoRef.current) {
                               videoRef.current.pause();
@@ -389,7 +387,7 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                 </div>
 
                 {/* Right side - Content */}
-<div className="flex flex-col p-6 md:p-8 overflow-y-auto min-h-0">
+                <div className="flex flex-col p-6 md:p-8 overflow-y-auto min-h-0">
 
                   <div className="flex-1">
                     {/* Badges */}
@@ -463,17 +461,15 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                         {colors.map((color) => (
                           <button
                             key={color}
-                            className={`flex flex-col items-center gap-2 ${
-                              selectedColor === color ? 'font-medium' : ''
-                            }`}
+                            className={`flex flex-col items-center gap-2 ${selectedColor === color ? 'font-medium' : ''
+                              }`}
                             onClick={() => setSelectedColor(color)}
                           >
                             <div
-                              className={`w-10 h-10 rounded-full border-2 transition-all ${
-                                selectedColor === color
+                              className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColor === color
                                   ? "border-primary ring-2 ring-primary/20"
                                   : "border-muted hover:border-primary"
-                              }`}
+                                }`}
                               style={{ backgroundColor: color }}
                             />
                             <span className="text-xs">{color}</span>
@@ -489,11 +485,10 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                         {sizes.map((size) => (
                           <button
                             key={size}
-                            className={`px-4 py-2 rounded-lg border transition-all ${
-                              selectedSize === size
+                            className={`px-4 py-2 rounded-lg border transition-all ${selectedSize === size
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "border-muted hover:border-primary hover:bg-muted"
-                            }`}
+                              }`}
                             onClick={() => setSelectedSize(size)}
                           >
                             {size}
@@ -529,23 +524,21 @@ className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-
                           </>
                         )}
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="icon"
-                        className={`h-12 w-12 rounded-full ${
-                          isWishlisted ? "text-rose-500 border-rose-500" : ""
-                        }`}
+                        className={`h-12 w-12 rounded-full ${isWishlisted ? "text-rose-500 border-rose-500" : ""
+                          }`}
                         onClick={() => setIsWishlisted(!isWishlisted)}
                       >
                         <Heart
-                          className={`h-5 w-5 ${
-                            isWishlisted ? "fill-rose-500" : ""
-                          }`}
+                          className={`h-5 w-5 ${isWishlisted ? "fill-rose-500" : ""
+                            }`}
                         />
                       </Button>
                     </div>
-                    
+
                     {/* <div className="text-center">
                       <button className="text-sm text-muted-foreground hover:text-foreground">
                         *Confira a disponibilidade de entregas*

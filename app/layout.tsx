@@ -1,26 +1,20 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Pacifico } from "next/font/google"
+import { Montserrat} from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 })
 
-const pacifico = Pacifico({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-logo",
-  display: "swap",
-})
 
 export const metadata: Metadata = {
-  title: "Euquefiz - Produtos Artesanais para Casa",
-  description: "Produtos artesanais únicos para transformar sua casa em um lar ainda mais especial",
+  title: "Euquefiz",
+  description: "Catálogo Digital de Produtos",
   icons: {
     icon: [
       {
@@ -47,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} ${pacifico.variable} font-sans antialiased`}>
+      <body className={`${montserrat.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
           {children}
         </ThemeProvider>
