@@ -183,7 +183,7 @@ export default function LembrancasPage() {
           products={products}
           title="Lembranças Especiais"
           description="Encontre a lembrança perfeita para datas comemorativas e feriados."
-          columns={3}
+          columns={4}
         />
       </main>
 

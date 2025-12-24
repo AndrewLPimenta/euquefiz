@@ -183,7 +183,7 @@ export default function OrganizacaoPage() {
           products={products}
           title="Produtos de Organização"
           description="Soluções inteligentes para manter sua casa organizada."
-          columns={3}
+          columns={4}
         />
       </main>
 

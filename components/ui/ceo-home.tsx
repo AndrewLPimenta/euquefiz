@@ -53,7 +53,7 @@ const reviews = [
      quote:
        "Essa marca é a extensão da minha história, e hoje eu começo a dividi-la com você.",
      imageSrc:
-       "/placeholder.svg",
+       "/ceo-placeholder-photo.png",
      thumbnailSrc:
        "ceo-placeholder.png",
    },

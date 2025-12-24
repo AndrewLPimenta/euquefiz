@@ -183,7 +183,7 @@ export default function CasaPage() {
           products={products}
           title="Produtos pra Casa"
           description="Explore nossa coleção de produtos pro seu lar."
-          columns={3}
+          columns={4}
         />
       </main>
 

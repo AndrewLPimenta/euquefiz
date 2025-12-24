@@ -183,7 +183,7 @@ export default function CristianismoPage() {
           products={products}
           title="Produtos Cristãos"
           description="Explore nossa coleção de produtos com inspiração cristã."
-          columns={3}
+          columns={4}
         />
       </main>
 

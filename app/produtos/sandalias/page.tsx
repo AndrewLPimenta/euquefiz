@@ -183,7 +183,7 @@ export default function SandaliaPage() {
           products={products}
           title="Nossas Sandálias"
           description="Explore nossa coleção exclusiva de sandálias."
-          columns={3}
+          columns={4}
         />
       </main>
 

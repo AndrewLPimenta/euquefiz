@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
+import { Instagram } from "lucide-react"
 
 interface Testimonial {
   image: string
@@ -90,12 +91,12 @@ export function Testimonials({
                     {testimonial.text}
                   </p>
                 </div>
-                <button
-                  onClick={() => openInNewTab(testimonial.social)}
-                  className="absolute top-4 right-4 hover:opacity-80 transition-opacity"
-                >
-                  <Icons.twitter className="h-4 w-4" aria-hidden="true" />
-                </button>
+               <button
+                onClick={() => openInNewTab(testimonial.social)}
+                className="absolute top-4 right-4 hover:opacity-80 transition-opacity"
+              >
+                <Instagram className="h-4 w-4" aria-hidden="true" />
+              </button>
               </Card>
             ))}
         </div>
