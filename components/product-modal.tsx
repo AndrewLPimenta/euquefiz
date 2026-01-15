@@ -14,7 +14,6 @@ import {
   Check,
   Loader2,
   Play,
-
   Pause,
   Volume2,
   VolumeX,
@@ -22,7 +21,6 @@ import {
   Share2,
   Maximize2,
 } from "lucide-react";
-import Image from "next/image";
 
 export interface ProductModalProps {
   name?: string;
@@ -40,6 +38,7 @@ export interface ProductModalProps {
   description?: string;
   open: boolean;
   onClose: () => void;
+  onAddToCart?: () => Promise<void>; 
 }
 
 interface MediaItem {
@@ -68,6 +67,7 @@ export function ProductModal({
   description = "Product description goes here",
   open,
   onClose,
+  onAddToCart, // Adicionado
 }: ProductModalProps) {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -126,14 +126,24 @@ export function ProductModal({
     setCurrentMediaIndex((prev) => (prev - 1 + media.length) % media.length);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (isAddedToCart) return;
     setIsAddingToCart(true);
-    setTimeout(() => {
+    
+    try {
+      // Se houver callback personalizado, executa
+      if (onAddToCart) {
+        await onAddToCart();
+      }
+      
+      // Animações de feedback
       setIsAddingToCart(false);
       setIsAddedToCart(true);
       setTimeout(() => setIsAddedToCart(false), 2000);
-    }, 800);
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+      setIsAddingToCart(false);
+    }
   };
 
   const togglePlayPause = (e: React.MouseEvent) => {
@@ -148,8 +158,6 @@ export function ProductModal({
       setIsPlaying(false)
     }
   }
-
-
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -179,21 +187,6 @@ export function ProductModal({
     setIsPlaying(true)
   }
 
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: name,
-        text: description,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copiado!");
-    }
-  };
-
-
   useEffect(() => {
     if (open && media.length > 0) {
       setCurrentMediaIndex(0)
@@ -217,6 +210,12 @@ export function ProductModal({
     setIsPlaying(true)
   }, [open, currentMediaIndex, isVideo])
 
+  const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(price);
+  };
 
   return (
     <AnimatePresence>
@@ -273,18 +272,11 @@ export function ProductModal({
                           onClick={togglePlayPause}
                         />
 
-
-
                         {/* Video controls */}
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 via-transparent to-transparent">
-
-
-
-
                           {/* Additional controls */}
                           <div className="absolute bottom-4 right-4 flex gap-2">
-
-
+                            {/* Controles podem ser adicionados aqui */}
                           </div>
                         </div>
                       </div>
@@ -297,6 +289,10 @@ export function ProductModal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
                       />
                     )}
 
@@ -370,6 +366,10 @@ export function ProductModal({
                                 src={item.thumbnail || item.url}
                                 alt={`Thumbnail ${index + 1}`}
                                 className="w-full h-full object-cover opacity-60"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/placeholder.svg";
+                                }}
                               />
                               <Play className="absolute inset-0 m-auto h-6 w-6 text-white" />
                             </div>
@@ -378,6 +378,10 @@ export function ProductModal({
                               src={item.url}
                               alt={`Thumbnail ${index + 1}`}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
                             />
                           )}
                         </button>
@@ -412,16 +416,27 @@ export function ProductModal({
                       <div className="flex items-center gap-4">
                         <div className="flex items-center">
                           <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                          <span className="ml-1 font-medium">{rating}</span>
+                          <span className="ml-1 font-medium">{rating?.toFixed(1) || "4.5"}</span>
                           <span className="ml-1 text-muted-foreground">
-                            ({reviewCount} avaliações)
+                            ({reviewCount || 0} avaliações)
                           </span>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-10 border border-primary/40 hover:bg-primary/10"
-                          onClick={handleShare}
+                          onClick={() => {
+                            if (navigator.share) {
+                              navigator.share({
+                                title: name,
+                                text: description,
+                                url: window.location.href,
+                              });
+                            } else {
+                              navigator.clipboard.writeText(window.location.href);
+                              alert("Link copiado!");
+                            }
+                          }}
                         >
                           <Share2 className="h-4 w-4 mr-2" />
                           Compartilhar
@@ -432,14 +447,16 @@ export function ProductModal({
                     {/* Price */}
                     <div className="mb-6">
                       <div className="flex items-baseline gap-3">
-                        <span className="text-3xl font-bold">${price.toFixed(2)}</span>
-                        {originalPrice > price && (
+                        <span className="text-3xl font-bold">
+                          {formatPrice(price || 0)}
+                        </span>
+                        {originalPrice && originalPrice > (price || 0) && (
                           <>
                             <span className="text-lg text-muted-foreground line-through">
-                              ${originalPrice.toFixed(2)}
+                              {formatPrice(originalPrice)}
                             </span>
                             <Badge variant="outline" className="text-rose-500">
-                              - ${(originalPrice - price).toFixed(2)}
+                              - {formatPrice(originalPrice - (price || 0))}
                             </Badge>
                           </>
                         )}
@@ -448,54 +465,58 @@ export function ProductModal({
 
                     {/* Description */}
                     <div className="mb-8">
-                      <h3 className="font-semibold mb-2">Description</h3>
+                      <h3 className="font-semibold mb-2">Descrição</h3>
                       <p className="text-muted-foreground leading-relaxed">
                         {description}
                       </p>
                     </div>
 
                     {/* Colors */}
-                    <div className="mb-6">
-                      <h3 className="font-semibold mb-3">Colors</h3>
-                      <div className="flex flex-wrap gap-3">
-                        {colors.map((color) => (
-                          <button
-                            key={color}
-                            className={`flex flex-col items-center gap-2 ${selectedColor === color ? 'font-medium' : ''
-                              }`}
-                            onClick={() => setSelectedColor(color)}
-                          >
-                            <div
-                              className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColor === color
-                                  ? "border-primary ring-2 ring-primary/20"
-                                  : "border-muted hover:border-primary"
+                    {colors && colors.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="font-semibold mb-3">Cores</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {colors.map((color) => (
+                            <button
+                              key={color}
+                              className={`flex flex-col items-center gap-2 ${selectedColor === color ? 'font-medium' : ''
                                 }`}
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="text-xs">{color}</span>
-                          </button>
-                        ))}
+                              onClick={() => setSelectedColor(color)}
+                            >
+                              <div
+                                className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColor === color
+                                    ? "border-primary ring-2 ring-primary/20"
+                                    : "border-muted hover:border-primary"
+                                  }`}
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="text-xs">{color}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Sizes */}
-                    <div className="mb-8">
-                      <h3 className="font-semibold mb-3">Sizes</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {sizes.map((size) => (
-                          <button
-                            key={size}
-                            className={`px-4 py-2 rounded-lg border transition-all ${selectedSize === size
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-muted hover:border-primary hover:bg-muted"
-                              }`}
-                            onClick={() => setSelectedSize(size)}
-                          >
-                            {size}
-                          </button>
-                        ))}
+                    {sizes && sizes.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="font-semibold mb-3">Tamanhos</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {sizes.map((size) => (
+                            <button
+                              key={size}
+                              className={`px-4 py-2 rounded-lg border transition-all ${selectedSize === size
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "border-muted hover:border-primary hover:bg-muted"
+                                }`}
+                              onClick={() => setSelectedSize(size)}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Action buttons */}
@@ -510,7 +531,7 @@ export function ProductModal({
                         {isAddingToCart ? (
                           <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Adding...
+                            Adicionando...
                           </>
                         ) : isAddedToCart ? (
                           <>
@@ -520,7 +541,7 @@ export function ProductModal({
                         ) : (
                           <>
                             <ShoppingCart className="mr-2 h-5 w-5" />
-                            R$ {price.toFixed(2)}
+                            {formatPrice(price || 0)}
                           </>
                         )}
                       </Button>
@@ -538,16 +559,6 @@ export function ProductModal({
                         />
                       </Button>
                     </div>
-
-                    {/* <div className="text-center">
-                      <button className="text-sm text-muted-foreground hover:text-foreground">
-                        *Confira a disponibilidade de entregas*
-                      </button>
-                      <span className="mx-2">•</span>
-                      <button className="text-sm text-muted-foreground hover:text-foreground">
-                        🚚 Free shipping
-                      </button>
-                    </div> */}
                   </div>
                 </div>
               </div>

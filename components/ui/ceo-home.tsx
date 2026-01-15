@@ -37,7 +37,7 @@ const reviews = [
   },
    {
      id: 4,
-     name: "Danielle",
+     name: "Danielle", 
      affiliation: "@euquefiz_bydani",
      quote:
        "Que representasse cuidado, afeto e exclusividade..",

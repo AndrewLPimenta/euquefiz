@@ -1,152 +1,132 @@
+"use client"
+
 import { StackedCardsInteraction } from "@/components/ui/stacked-cards-interaction";
+import { useEffect, useState } from "react";
+import { categoriesAPI, productsAPI } from '@/lib/api';
 
 const SectionProducts = () => {
-  return (
-    <StackedCardsInteraction
-      groups={[
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Modelos de Sandália",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "Modelos de Sandália",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "Modelos de Sandália",
-            },
-          ],
-          button: {
-            label: "Sandálias",
-            link: "/produtos/sandalias",
-          },
-        },
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Bolsa",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "Bolsa",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "Bolsa",
-            },
-          ],
-          button: {
-            label: "Bolsas",
-            link: "/produtos/bolsas",
-          },
-        },
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Lembrancinhas",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "lembrancinhas",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "lembrancinhas",
-            },
-          ],
-          button: {
-            label: "Lembrancinhas",
-            link: "/produtos/lembrancas",
-          },
-        },
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Espirito Santo",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "Espirito Santo",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "Espirito Santo",
-            },
-          ],
-          button: {
-            label: "Cristianismo",
-            link: "/produtos/cristianismo",
-          },
-        },
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Organizadores",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "Organizadores",
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "Organizadores",
+  useEffect(() => {
+    async function loadCategoriesWithProducts() {
+      try {
+        setLoading(true);
+        console.log("📦 Carregando categorias e produtos...");
+        
+        // 1. Busca todas as categorias
+        const categoriesResponse = await categoriesAPI.getAll();
+        const categories = categoriesResponse.data || categoriesResponse || [];
+        
+        console.log(`✅ Categorias encontradas: ${categories.length}`);
+        
+        // 2. Para cada categoria, busca produtos reais
+        const groupsPromises = categories.slice(0, 6).map(async (category: any) => {
+          try {
+            console.log(`🔍 Buscando produtos da categoria: ${category.nome}`);
+            
+            // Busca produtos desta categoria
+            const productsData = await productsAPI.getByCategory(category.slug);
+            
+            // Pega até 3 produtos reais
+            const realProducts = productsData.slice(0, 3);
+            
+            // Se não tiver produtos suficientes, usa placeholders
+            let cards = [];
+            
+            if (realProducts.length > 0) {
+              // Usa produtos reais
+              cards = realProducts.map((product: any) => ({
+                image: product.produto_midias?.[0]?.url || "/placeholder.svg",
+                title: product.nome,
+                description: product.descricao?.substring(0, 50) + "..." || "Produto exclusivo",
+              }));
+            }
+            
+            // Completa com placeholders se necessário
+            while (cards.length < 3) {
+              cards.push({
+                image: "/placeholder.svg",
+                title: "Novo Modelo",
+                description: "Em breve",
+              });
+            }
+            
+            return {
+              cards,
+              button: {
+                label: category.nome,
+                link: `/category/${category.slug}`,
+              },
+            };
+            
+          } catch (err) {
+            console.error(`❌ Erro ao carregar produtos da categoria ${category.nome}:`, err);
+            
+            // Retorna categoria com placeholders em caso de erro
+            return {
+              cards: [
+                { image: "/placeholder.svg", title: "Modelos Exclusivos", description: "Coleção especial" },
+                { image: "/placeholder.svg", title: "Edição Limitada", description: "Feito à mão" },
+                { image: "/placeholder.svg", title: "Lançamento", description: "Novidades em breve" },
+              ],
+              button: {
+                label: category.nome,
+                link: `/category/${category.slug}`,
+              },
+            };
+          }
+        });
+        
+        // 3. Aguarda todas as promises
+        const groupsData = await Promise.all(groupsPromises);
+        setGroups(groupsData);
+        
+        console.log(`🎉 Grupos carregados: ${groupsData.length}`);
+        
+      } catch (err) {
+        console.error("❌ Erro geral ao carregar:", err);
+        setError("Não foi possível carregar os dados");
+        setGroups([]);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-            },
-          ],
-          button: {
-            label: "Organização",
-            link: "/produtos/organizacao",
-          },
-        },
-        {
-          cards: [
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 1",
-              description: "Itens para casa",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 2",
-              description: "Itens para casa",
-            },
-            {
-              image: "/placeholder.svg",
-              title: "Modelo 3",
-              description: "Itens para casa",
-            },
-          ],
-          button: {
-            label: "Ver tudo para casa",
-            link: "/produtos/casa",
-          },
-        },
-      ]}
-    />
-  );
+    loadCategoriesWithProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+          <p className="text-sm text-gray-600">Carregando produtos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">Erro ao carregar produtos</p>
+        <p className="text-sm text-gray-500 mt-2">Tente recarregar a página</p>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600">Nenhum produto disponível</p>
+        <p className="text-sm text-gray-500 mt-2">Adicione produtos no painel administrativo</p>
+      </div>
+    );
+  }
+
+  return <StackedCardsInteraction groups={groups} />;
 };
 
 export { SectionProducts };

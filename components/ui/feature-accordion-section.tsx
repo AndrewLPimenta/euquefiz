@@ -7,61 +7,94 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function FeatureAccordionSection() {
+  const [isClient, setIsClient] = useState(false);
 
-const features = [
-  {
-    id: "item-1",
-    title: "Compromisso com qualidade",
-    count: 24,
-    image: "/placeholder.jpg",
-    description:
-      "Selecionamos e produzimos cada item com cuidado, priorizando bons materiais, acabamento e durabilidade em todos os produtos.",
-  },
-  {
-    id: "item-2",
-    title: "Atenção aos detalhes em cada peça",
-    count: 12,
-    image: "/placeholder.jpg",
-    description:
-      "Nada é feito no automático. Cada detalhe é pensado para entregar um produto bonito, funcional e bem finalizado.",
-  },
-  {
-    id: "item-3",
-    title: "Produtos feitos para o dia a dia",
-    count: 18,
-    image: "/placeholder.jpg",
-    description:
-      "Criamos itens pensados para uso real, que se encaixam facilmente na rotina e no cotidiano.",
-  },
-  {
-    id: "item-4",
-    title: "Equilíbrio entre estética e funcionalidade",
-    count: 30,
-    image: "/placeholder.jpg",
-    description:
-      "Nossos produtos unem beleza e utilidade, para que cada escolha faça sentido tanto visualmente quanto no uso.",
-  },
-  {
-    id: "item-5",
-    title: "Transparência em cada escolha",
-    count: 15,
-    image: "/placeholder.jpg",
-    description:
-      "O que você vê é o que recebe. Prezamos por descrições claras, fotos reais e uma experiência sem surpresas.",
-  },
-  {
-    id: "item-6",
-    title: "Cuidado em toda a experiência",
-    count: 22,
-    image: "/placeholder.jpg",
-    description:
-      "Do primeiro contato até o produto em mãos, buscamos oferecer um processo simples, seguro e agradável.",
-  },
-];
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
+  const features = [
+    {
+      id: "item-1",
+      title: "Compromisso com qualidade",
+      count: 24,
+      image: "/placeholder.jpg",
+      description:
+        "Selecionamos e produzimos cada item com cuidado, priorizando bons materiais, acabamento e durabilidade em todos os produtos.",
+    },
+    {
+      id: "item-2",
+      title: "Atenção aos detalhes em cada peça",
+      count: 12,
+      image: "/placeholder.jpg",
+      description:
+        "Nada é feito no automático. Cada detalhe é pensado para entregar um produto bonito, funcional e bem finalizado.",
+    },
+    {
+      id: "item-3",
+      title: "Produtos feitos para o dia a dia",
+      count: 18,
+      image: "/placeholder.jpg",
+      description:
+        "Criamos itens pensados para uso real, que se encaixam facilmente na rotina e no cotidiano.",
+    },
+    {
+      id: "item-4",
+      title: "Equilíbrio entre estética e funcionalidade",
+      count: 30,
+      image: "/placeholder.jpg",
+      description:
+        "Nossos produtos unem beleza e utilidade, para que cada escolha faça sentido tanto visualmente quanto no uso.",
+    },
+    {
+      id: "item-5",
+      title: "Transparência em cada escolha",
+      count: 15,
+      image: "/placeholder.jpg",
+      description:
+        "O que você vê é o que recebe. Prezamos por descrições claras, fotos reais e uma experiência sem surpresas.",
+    },
+    {
+      id: "item-6",
+      title: "Cuidado em toda a experiência",
+      count: 22,
+      image: "/placeholder.jpg",
+      description:
+        "Do primeiro contato até o produto em mãos, buscamos oferecer um processo simples, seguro e agradável.",
+    },
+  ];
 
+  // Se não está no cliente, mostra um skeleton loading
+  if (!isClient) {
+    return (
+      <div className="flex w-full max-w-xl mx-auto rounded-xl border border-border bg-card/20 text-card-foreground shadow-sm p-4">
+        <div className="w-full">
+          {features.map((_, index) => (
+            <div
+              key={`skeleton-${index}`}
+              className="border-b border-border last:border-b-0"
+            >
+              <div className="flex items-center gap-3 py-3">
+                {/* Skeleton para a imagem */}
+                <div className="w-7 h-7 rounded-md bg-gray-200 animate-pulse" />
+                
+                {/* Skeleton para o título */}
+                <div className="flex-1">
+                  <div className="h-5 bg-gray-200 animate-pulse rounded w-3/4" />
+                </div>
+                
+                {/* Skeleton para o contador */}
+                <div className="w-8 h-4 bg-gray-200 animate-pulse rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full max-w-xl mx-auto rounded-xl border border-border bg-card/20 text-card-foreground shadow-sm p-4">

@@ -246,22 +246,21 @@ export default function ProdutosPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <FloatingIconsHero
-          title="Conheça nossos produtos"
-          subtitle="Descubra nossa coleção abaixo."
-          ctaText="Clique para explorar"
-          ctaHref="#nossos-produtos"
-          icons={fashionIcons}
-          targetSectionId="nossos-produtos"
-        />
+        title="Conheça nossos produtos"
+        subtitle="Descubra nossa coleção abaixo."
+        ctaText="Clique para explorar"
+        ctaHref="#nossos-produtos"
+        icons={fashionIcons}
+        targetSectionId="nossos-produtos"
+      />
       <main className="flex-1">
         {/* Hero Section */}
-       
- <div className="flex " id="nossos-produtos">
-        <SandaliasPromoSection
+
+        <div className="flex " id="nossos-produtos">
+          {/* <SandaliasPromoSection
           products={sandalias}
-          
-        />
-      </div>
+        /> */}
+        </div>
         <WhatsAppButton
           message="Olá, gostaria de mais informações!"
           buttonColor={buttonColor}
@@ -272,7 +271,7 @@ export default function ProdutosPage() {
         <section className="py-12 md:py-20 px-4">
 
           <div className="container mx-auto" >
-          <SectionProducts/>
+            <SectionProducts />
             {/* Category Filters
             <div className="flex flex-wrap gap-2 md:gap-3 mb-12 md:mb-16 justify-center">
               {categories.map((category) => (

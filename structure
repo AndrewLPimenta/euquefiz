@@ -1,0 +1,37 @@
+ops! tem um slug aqui: 📁 .next/
+📁 app/
+├── cadastro/
+├── category/[slug]/
+├── page.tsx
+├── checkout/
+├── contato/
+├── ecommerce/
+├── login/
+├── sobre/
+├── globals.css
+├── layout.tsx
+└── page.tsx
+📁 components/
+📁 contexts/
+├── auth-context.tsx
+└── cart-context.tsx
+📁 hooks/
+├── use-api.ts
+├── use-cart.ts
+├── use-checkout.ts
+├── use-mobile.ts
+└── use-toast.ts
+📁 lib/
+├── api/
+│   └── public.ts
+├── types/
+│   ├── cart.ts
+│   ├── category.ts
+│   ├── index.ts
+│   ├── product.ts
+│   └── user.ts
+└── utils/
+    ├── api.ts
+    ├── auth.ts
+    └── utils.ts
+ só pra informar minha estrutura de pastas está assim
