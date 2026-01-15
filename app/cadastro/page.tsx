@@ -1,65 +1,16 @@
-"use client"
-import { RegisterPage, type Testimonial } from "@/components/register"
-import { useAuth } from "@/contexts/auth-context"
-import { useSearchParams } from "next/navigation"
+// app/cadastro/page.tsx
+import { Suspense } from 'react'
+import RegisterContent from '@/components/RegisterContent'
+import { Loader2 } from "lucide-react"
 
-export default function RegisterRoute() {
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
-  
-  const { register } = useAuth()
-  
-  const testimonials: Testimonial[] = [
-    {
-      avatarSrc: "/placeholder.jpg",
-      name: "Cliente",
-      handle: "@cliente-instagram",
-      text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur, accusantium cupiditate maiores facere quaerat eveniet perspiciatis vero nisi.",
-    },
-    {
-      avatarSrc: "/placeholder.jpg",
-      name: "Cliente",
-      handle: "@cliente-instagram",
-      text: "Optio suscipit dolores delectus nobis animi, culpa minus? Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-    },
-    {
-      avatarSrc: "/placeholder.jpg",
-      name: "Cliente",
-      handle: "@cliente-instagram",
-      text: "Consequatur, accusantium cupiditate maiores facere quaerat eveniet perspiciatis vero nisi.",
-    },
-  ]
-
-  const handleGoogleSignIn = () => {
-    console.log("Iniciando login com Google...")
-  }
-
-  const handleLogin = () => {
-    window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`
-  }
-
-  const handleRegister = async (formData: any) => {
-    try {
-      await register(formData)
-    } catch (error) {
-      // O erro já foi tratado pelo useAuth
-      console.error('Erro no cadastro:', error)
-    }
-  }
-
+export default function CadastroPage() {
   return (
-    <RegisterPage
-      title={
-        <>
-          <span className="font-light">Euquefiz</span>
-        </>
-      }
-      description="Crie sua conta para receber as melhores ofertas"
-      heroImageSrc="/background-auth.jpg"
-      testimonials={testimonials}
-      onGoogleSignIn={handleGoogleSignIn}
-      onLogin={handleLogin}
-      onRegister={handleRegister}
-    />
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   )
 }
