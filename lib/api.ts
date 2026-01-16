@@ -1,5 +1,5 @@
 // lib/api.ts - VERSÃO FINAL CORRIGIDA
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.15.7:3001"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL 
 
 // 🔄 Função para requisições públicas
 async function fetchPublicAPI(endpoint: string, options: RequestInit = {}) {
