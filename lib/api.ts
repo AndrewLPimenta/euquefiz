@@ -1,5 +1,6 @@
 // lib/api.ts - VERSÃO FINAL CORRIGIDA
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.15.8:3001"
+
 console.log("🌐 BASE_URL no front-end:", process.env.NEXT_PUBLIC_API_URL);
 
 // 🔄 Função para requisições públicas
@@ -455,6 +456,185 @@ export const productIdUtils = {
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr)
     })
   }
+}
+
+
+/* =======================
+   CLIENTES (PERFIL)
+======================= */
+export const clientProfileAPI = {
+  getProfile: authAPI.getProfile, // Já existe
+
+  updateProfile: async (data: {
+    nome?: string;
+    email?: string;
+    whatsapp?: string;
+    sexo?: string;
+    endereco?: string;
+  }) => {
+    return fetchWithAuth('/api/clients/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    return fetchWithAuth('/api/clients/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  },
+}
+
+/* =======================
+   ENDEREÇOS
+======================= */
+export const addressAPI = {
+  getMyAddresses: async (): Promise<any[]> => {
+    try {
+      const response = await fetchWithAuth('/api/clients/addresses')
+      return response.data || response || []
+    } catch (error) {
+      console.error('❌ Erro ao buscar endereços:', error)
+      return []
+    }
+  },
+
+  createAddress: (data: any) => 
+    fetchWithAuth('/api/clients/addresses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateAddress: (id: string, data: any) =>
+    fetchWithAuth(`/api/clients/addresses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteAddress: (id: string) =>
+    fetchWithAuth(`/api/clients/addresses/${id}`, {
+      method: 'DELETE',
+    }),
+
+  setDefaultAddress: (id: string) =>
+    fetchWithAuth(`/api/clients/addresses/${id}/default`, {
+      method: 'PUT',
+    }),
+}
+
+/* =======================
+   FAVORITOS
+======================= */
+export const favoritesAPI = {
+  getMyFavorites: async (): Promise<any[]> => {
+    try {
+      const response = await fetchWithAuth('/api/clients/favorites')
+      return response.data || response || []
+    } catch (error) {
+      console.error('❌ Erro ao buscar favoritos:', error)
+      return []
+    }
+  },
+
+  addFavorite: (productId: string) =>
+    fetchWithAuth('/api/clients/favorites', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId }),
+    }),
+
+  removeFavorite: (favoriteId: string) =>
+    fetchWithAuth(`/api/clients/favorites/${favoriteId}`, {
+      method: 'DELETE',
+    }),
+
+  checkFavorite: (productId: string) =>
+    fetchWithAuth(`/api/clients/favorites/check/${productId}`),
+}
+
+/* =======================
+   PEDIDOS DO CLIENTE
+======================= */
+export const clientOrdersAPI = {
+  getMyOrders: async (): Promise<any[]> => {
+    try {
+      const response = await fetchWithAuth('/api/orders/my')
+      
+      // Formata para o formato esperado
+      if (response && Array.isArray(response)) {
+        return response.map((order: any) => ({
+          id: order.id,
+          numero_pedido: order.id.substring(0, 8).toUpperCase(),
+          status: order.status || 'pendente',
+          total: order.total || order.valor_total || 0,
+          data_criacao: order.created_at || order.data_criacao,
+          itens: order.items?.map((item: any) => ({
+            id: item.id,
+            produto_nome: item.produto?.nome || 'Produto',
+            quantidade: item.quantidade || 1,
+            preco_unitario: item.preco || item.preco_unitario || 0
+          })) || []
+        }))
+      }
+      
+      if (response.success && Array.isArray(response.data)) {
+        return response.data.map((order: any) => ({
+          id: order.id,
+          numero_pedido: order.id.substring(0, 8).toUpperCase(),
+          status: order.status || 'pendente',
+          total: order.total || order.valor_total || 0,
+          data_criacao: order.created_at || order.data_criacao,
+          itens: order.items?.map((item: any) => ({
+            id: item.id,
+            produto_nome: item.produto?.nome || 'Produto',
+            quantidade: item.quantidade || 1,
+            preco_unitario: item.preco || item.preco_unitario || 0
+          })) || []
+        }))
+      }
+      
+      return []
+    } catch (error) {
+      console.error('❌ Erro ao buscar pedidos:', error)
+      return []
+    }
+  },
+
+  getOrderById: async (orderId: string) => {
+    try {
+      const response = await fetchWithAuth(`/api/orders/${orderId}`)
+      
+      if (response.success || response.id) {
+        const order = response.data || response
+        
+        return {
+          id: order.id,
+          numero_pedido: order.id.substring(0, 8).toUpperCase(),
+          status: order.status || 'pendente',
+          total: order.total || order.valor_total || 0,
+          data_criacao: order.created_at || order.data_criacao,
+          subtotal: order.subtotal || 0,
+          frete: order.frete || 0,
+          desconto: order.desconto || 0,
+          forma_pagamento: order.forma_pagamento || 'Não especificado',
+          endereco_entrega: order.endereco_entrega || {},
+          itens: order.items?.map((item: any) => ({
+            id: item.id,
+            produto_id: item.produto_id,
+            produto_nome: item.produto?.nome || 'Produto',
+            quantidade: item.quantidade || 1,
+            preco_unitario: item.preco || item.preco_unitario || 0,
+            total: (item.quantidade || 1) * (item.preco || 0)
+          })) || []
+        }
+      }
+      
+      throw new Error('Pedido não encontrado')
+    } catch (error) {
+      console.error('❌ Erro ao buscar pedido:', error)
+      throw error
+    }
+  },
 }
 
 /* =======================

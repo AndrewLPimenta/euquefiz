@@ -148,7 +148,7 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/produtos?q=${encodeURIComponent(searchQuery)}`)
+      router.push(`/category?q=${encodeURIComponent(searchQuery)}`)
       setIsSearchOpen(false)
       setSearchQuery("")
       setMobileMenuOpen(false)
@@ -156,7 +156,7 @@ export function Header() {
   }
 
   const quickSearch = (term: string) => {
-    router.push(`/produtos?q=${encodeURIComponent(term)}`)
+    router.push(`/category?q=${encodeURIComponent(term)}`)
     setIsSearchOpen(false)
     setSearchQuery("")
   }
@@ -478,8 +478,7 @@ export function Header() {
 
             {/* Search Bar - MD/LG */}
             <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
-              <form onSubmit={handleSearch} className="relative w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              {/* <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
                   value={searchQuery}
@@ -493,7 +492,7 @@ export function Header() {
                 >
                   <Search className="h-4 w-4" />
                 </button>
-              </form>
+              </form> */}
             </div>
 
             {/* Right Actions */}

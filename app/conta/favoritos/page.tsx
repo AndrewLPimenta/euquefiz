@@ -7,86 +7,74 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Heart, ShoppingBag, Trash2, ArrowRight, Home, User, Loader2 } from "lucide-react"
-import { authAPI, ecommerceHelpers } from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { favoritesAPI, ecommerceHelpers } from "@/lib/api"
 
 interface Favorite {
-  id: string;
-  produto_id: string;
+  id: string
+  produto_id: string
   produto: {
-    id: string;
-    nome: string;
-    descricao: string;
-    preco: number;
+    id: string
+    nome: string
+    descricao: string
+    preco: number
     categoria?: {
-      nome: string;
-    };
+      nome: string
+    }
     produto_midias?: Array<{
-      id: string;
-      tipo: string;
-      url: string;
-    }>;
-  };
-  data_criacao: string;
+      id: string
+      tipo: string
+      url: string
+    }>
+  }
+  data_criacao: string
 }
 
 export default function FavoritesPage() {
   const router = useRouter()
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [removing, setRemoving] = useState<string | null>(null)
 
-  // Mock data - substituir por API real quando disponível
-  const mockFavorites: Favorite[] = [
-    {
-      id: "1",
-      produto_id: "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
-      produto: {
-        id: "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
-        nome: "Quadro Decorativo Moderno",
-        descricao: "Peça exclusiva feita à mão com detalhes em madeira",
-        preco: 299.90,
-        categoria: { nome: "Decoração" },
-        produto_midias: [{ id: "1", tipo: "imagem", url: "/placeholder.svg" }]
-      },
-      data_criacao: new Date().toISOString()
-    },
-    {
-      id: "2",
-      produto_id: "b2c3d4e5-f6g7-h8i9-j0k1-l2m3n4o5p6q7",
-      produto: {
-        id: "b2c3d4e5-f6g7-h8i9-j0k1-l2m3n4o5p6q7",
-        nome: "Conjunto de Almofadas",
-        descricao: "Conjunto de 3 almofadas com estampas exclusivas",
-        preco: 189.90,
-        categoria: { nome: "Têxtil" },
-        produto_midias: [{ id: "2", tipo: "imagem", url: "/placeholder.svg" }]
-      },
-      data_criacao: new Date().toISOString()
-    }
-  ]
-
   useEffect(() => {
-    loadFavorites()
-  }, [])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        toast.error("Você precisa estar logado para ver seus favoritos")
+        router.push("/entrar")
+      } else {
+        loadFavorites()
+      }
+    }
+  }, [authLoading, isAuthenticated, router])
 
   const loadFavorites = async () => {
     try {
       setLoading(true)
-      // Verificar autenticação
-      await authAPI.getProfile()
+      const favoritesData = await favoritesAPI.getMyFavorites()
       
-      // TODO: Implementar API real de favoritos quando disponível
-      // const favoritesData = await fetchWithAuth('/api/favorites')
-      // setFavorites(favoritesData)
+      // Formatar dados conforme necessário
+      const formattedFavorites = favoritesData.map((item: any) => ({
+        id: item.id,
+        produto_id: item.produto_id || item.product_id,
+        produto: {
+          id: item.produto_id || item.product_id,
+          nome: item.produto?.nome || item.product?.name || 'Produto',
+          descricao: item.produto?.descricao || item.product?.description || '',
+          preco: item.produto?.preco || item.product?.price || 0,
+          categoria: item.produto?.categoria || item.product?.category,
+          produto_midias: item.produto?.produto_midias || item.product?.media
+        },
+        data_criacao: item.created_at || item.data_criacao
+      }))
       
-      // Usando mock por enquanto
-      setFavorites(mockFavorites)
+      setFavorites(formattedFavorites)
+      console.log("❤️ Favoritos carregados:", formattedFavorites)
     } catch (error) {
       console.error("Erro ao carregar favoritos:", error)
-      toast.error("Você precisa estar logado para ver seus favoritos")
-      router.push("/entrar")
+      toast.error("Erro ao carregar seus favoritos")
     } finally {
       setLoading(false)
     }
@@ -95,10 +83,9 @@ export default function FavoritesPage() {
   const removeFavorite = async (favoriteId: string) => {
     try {
       setRemoving(favoriteId)
-      // TODO: Implementar API real para remover favorito
-      // await fetchWithAuth(`/api/favorites/${favoriteId}`, { method: 'DELETE' })
+      await favoritesAPI.removeFavorite(favoriteId)
       
-      // Simulação de remoção
+      // Atualizar lista localmente
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId))
       toast.success("Produto removido dos favoritos")
     } catch (error) {
@@ -113,7 +100,7 @@ export default function FavoritesPage() {
     return ecommerceHelpers.getMainImage(product)
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -126,6 +113,10 @@ export default function FavoritesPage() {
         <Footer />
       </div>
     )
+  }
+
+  if (!isAuthenticated) {
+    return null
   }
 
   return (
@@ -182,7 +173,7 @@ export default function FavoritesPage() {
                     </Button>
 
                     <Button variant="ghost" className="w-full justify-start" asChild>
-                      <Link href="/conta/pedidos" className="flex items-center gap-3">
+                      <Link href="/conta/meuspedidos" className="flex items-center gap-3">
                         <ShoppingBag className="h-5 w-5" />
                         <span>Meus Pedidos</span>
                       </Link>

@@ -8,56 +8,57 @@ import { Footer } from "@/components/footer"
 import { User, Settings, ShoppingBag, Heart, LogOut, Package, CreditCard, MapPin, Bell, Shield, Loader2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { useEffect, useState } from "react"
-import { authAPI, ordersAPI } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
+import { clientProfileAPI, clientOrdersAPI, addressAPI } from "@/lib/api"
 
 // Interfaces para tipagem
 interface UserProfile {
-  id: string;
-  nome: string;
-  email: string;
-  whatsapp?: string;
-  sexo?: string;
-  endereco?: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  id: string
+  nome: string
+  email: string
+  whatsapp?: string
+  sexo?: string
+  endereco?: string
+  data_criacao: string
+  data_atualizacao: string
 }
 
 interface OrderItem {
-  id: string;
-  produto_nome: string;
-  quantidade: number;
-  preco_unitario: number;
+  id: string
+  produto_nome: string
+  quantidade: number
+  preco_unitario: number
 }
 
 interface Order {
-  id: string;
-  numero_pedido: string;
-  status: string;
-  total: number;
-  data_criacao: string;
-  itens: OrderItem[];
+  id: string
+  numero_pedido: string
+  status: string
+  total: number
+  data_criacao: string
+  itens: OrderItem[]
 }
 
 interface Address {
-  id: string;
-  tipo: string;
-  rua: string;
-  numero: string;
-  complemento?: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  principal: boolean;
+  id: string
+  tipo: string
+  rua: string
+  numero: string
+  complemento?: string
+  bairro: string
+  cidade: string
+  estado: string
+  cep: string
+  principal: boolean
 }
 
 export default function AccountPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
+  const { user, isAuthenticated, loading: authLoading, logout, updateUserProfile } = useAuth()
+  const [pageLoading, setPageLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
-  const [userData, setUserData] = useState<UserProfile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [addresses, setAddresses] = useState<Address[]>([])
   const [activeTab, setActiveTab] = useState("perfil")
@@ -71,56 +72,55 @@ export default function AccountPage() {
     endereco: ""
   })
 
-  // Carregar dados do perfil
+  // Redirecionar se não estiver autenticado
   useEffect(() => {
-    loadUserData()
-    loadOrders()
-    loadAddresses()
-  }, [])
-
-  const loadUserData = async () => {
-    try {
-      setLoading(true)
-      const profile = await authAPI.getProfile()
-      setUserData(profile)
-      setFormData({
-        nome: profile.nome || "",
-        email: profile.email || "",
-        whatsapp: profile.whatsapp || "",
-        sexo: profile.sexo || "",
-        endereco: profile.endereco || ""
-      })
-    } catch (error) {
-      console.error("Erro ao carregar perfil:", error)
-      toast.error("Erro ao carregar dados do perfil")
+    if (!authLoading && !isAuthenticated) {
+      toast.error("Você precisa estar logado para acessar esta página")
       router.push("/entrar")
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  // Carregar dados quando o usuário estiver disponível
+  useEffect(() => {
+    if (user) {
+      loadInitialData()
+    }
+  }, [user])
+
+  // Atualizar formData quando user mudar
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nome: user.nome || "",
+        email: user.email || "",
+        whatsapp: user.whatsapp || "",
+        sexo: user.sexo || "",
+        endereco: user.endereco || ""
+      })
+    }
+  }, [user])
+
+  const loadInitialData = async () => {
+    try {
+      setPageLoading(true)
+      
+      // Carregar dados em paralelo
+      await Promise.all([
+        loadOrders(),
+        loadAddresses()
+      ])
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
   const loadOrders = async () => {
     try {
-      const response = await ordersAPI.getMyOrders()
-      
-      // Tratamento seguro dos dados
-      let ordersArray: Order[] = []
-      
-      if (response && Array.isArray(response)) {
-        ordersArray = response
-      } else if (response && typeof response === 'object') {
-        // Se a API retornar um objeto, tenta extrair o array
-        const possibleArray = response.orders || response.data || response.itens
-        if (Array.isArray(possibleArray)) {
-          ordersArray = possibleArray
-        } else if (response.id) {
-          // Se for um único pedido, coloca em array
-          ordersArray = [response]
-        }
-      }
-      
-      console.log("Pedidos carregados:", ordersArray)
-      setOrders(ordersArray)
+      const ordersData = await clientOrdersAPI.getMyOrders()
+      console.log("📦 Pedidos carregados:", ordersData)
+      setOrders(ordersData)
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error)
       toast.error("Erro ao carregar pedidos")
@@ -130,9 +130,9 @@ export default function AccountPage() {
 
   const loadAddresses = async () => {
     try {
-      // TODO: Implementar API de endereços quando disponível
-      // Por enquanto, deixar array vazio
-      setAddresses([])
+      const addressesData = await addressAPI.getMyAddresses()
+      console.log("📍 Endereços carregados:", addressesData)
+      setAddresses(addressesData)
     } catch (error) {
       console.error("Erro ao carregar endereços:", error)
       setAddresses([])
@@ -140,41 +140,68 @@ export default function AccountPage() {
   }
 
   const handleSaveProfile = async () => {
+    if (!user) return
+    
     try {
       setProfileLoading(true)
-      // TODO: Implementar chamada para atualizar perfil
-      // await authAPI.updateProfile(formData)
-      toast.success("Perfil atualizado com sucesso!")
-    } catch (error) {
+      
+      const response = await clientProfileAPI.updateProfile(formData)
+      
+      if (response.success || response.id) {
+        // Atualizar usuário no contexto
+        const updatedUser = {
+          ...user,
+          nome: formData.nome,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          sexo: formData.sexo,
+          endereco: formData.endereco
+        }
+        
+        updateUserProfile(updatedUser)
+        toast.success("Perfil atualizado com sucesso!")
+      } else {
+        throw new Error(response.error || "Erro ao atualizar perfil")
+      }
+    } catch (error: any) {
       console.error("Erro ao atualizar perfil:", error)
-      toast.error("Erro ao atualizar perfil")
+      toast.error(error.message || "Erro ao atualizar perfil")
     } finally {
       setProfileLoading(false)
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('cliente_token')
-    sessionStorage.removeItem('cliente_token')
+    logout()
     toast.success("Logout realizado com sucesso!")
     router.push("/")
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
-      month: 'long',
-      year: 'numeric'
-    })
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Data não disponível"
+    
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('pt-BR', {
+        month: 'long',
+        year: 'numeric'
+      })
+    } catch (error) {
+      return "Data inválida"
+    }
   }
 
   const formatOrderDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch (error) {
+      return "Data inválida"
+    }
   }
 
   const formatPrice = (price: number) => {
@@ -184,7 +211,8 @@ export default function AccountPage() {
     }).format(price)
   }
 
-  if (loading) {
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading || pageLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -197,6 +225,11 @@ export default function AccountPage() {
         <Footer />
       </div>
     )
+  }
+
+  // Se não estiver autenticado, não mostrar nada (será redirecionado)
+  if (!isAuthenticated || !user) {
+    return null
   }
 
   return (
@@ -220,11 +253,11 @@ export default function AccountPage() {
                     <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
                       <User className="h-10 w-10 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold">{userData?.nome || "Usuário"}</h3>
-                    <p className="text-sm text-muted-foreground">{userData?.email}</p>
-                    {userData?.data_criacao && (
+                    <h3 className="text-lg font-semibold">{user.nome}</h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    {user.data_criacao && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Membro desde {formatDate(userData.data_criacao)}
+                        Membro desde {formatDate(user.data_criacao)}
                       </p>
                     )}
                   </div>
@@ -246,6 +279,11 @@ export default function AccountPage() {
                     >
                       <Package className="h-5 w-5 mr-3" />
                       <span>Meus Pedidos</span>
+                      {orders.length > 0 && (
+                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {orders.length}
+                        </span>
+                      )}
                     </Button>
 
                     <Button variant="ghost" className="w-full justify-start" asChild>
@@ -262,6 +300,11 @@ export default function AccountPage() {
                     >
                       <MapPin className="h-5 w-5 mr-3" />
                       <span>Endereços</span>
+                      {addresses.length > 0 && (
+                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {addresses.length}
+                        </span>
+                      )}
                     </Button>
 
                     <Button 
@@ -295,7 +338,7 @@ export default function AccountPage() {
               </Card>
             </div>
 
-            {/* Conteúdo principal */}
+            {/* Conteúdo principal - MESMO CÓDIGO DO SEU ARQUIVO ANTERIOR, MAS COM FUNCIONALIDADES REAIS */}
             <div className="lg:col-span-3">
               {/* Aba Perfil */}
               {activeTab === "perfil" && (
@@ -349,7 +392,7 @@ export default function AccountPage() {
                             </select>
                           </div>
                           <div className="md:col-span-2 space-y-2">
-                            <label className="text-sm font-medium">Endereço</label>
+                            <label className="text-sm font-medium">Endereço Principal</label>
                             <input
                               type="text"
                               value={formData.endereco}
@@ -361,29 +404,13 @@ export default function AccountPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Preferências</h3>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Bell className="h-5 w-5" />
-                              <div>
-                                <p className="font-medium">Notificações por e-mail</p>
-                                <p className="text-sm text-muted-foreground">Receba atualizações sobre seus pedidos</p>
-                              </div>
-                            </div>
-                            <Button variant="outline">Gerenciar</Button>
-                          </div>
-                        </div>
-                      </div>
-
                       <div className="flex justify-end gap-4">
                         <Button variant="outline" onClick={() => setFormData({
-                          nome: userData?.nome || "",
-                          email: userData?.email || "",
-                          whatsapp: userData?.whatsapp || "",
-                          sexo: userData?.sexo || "",
-                          endereco: userData?.endereco || ""
+                          nome: user.nome || "",
+                          email: user.email || "",
+                          whatsapp: user.whatsapp || "",
+                          sexo: user.sexo || "",
+                          endereco: user.endereco || ""
                         })}>
                           Cancelar
                         </Button>
@@ -403,14 +430,13 @@ export default function AccountPage() {
                 </Card>
               )}
 
-              {/* Aba Pedidos - CORREÇÃO APLICADA */}
+              {/* Aba Pedidos */}
               {activeTab === "pedidos" && (
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-6">Histórico de Pedidos</h3>
                     
-                    {/* Verificação segura para orders */}
-                    {!Array.isArray(orders) || orders.length === 0 ? (
+                    {orders.length === 0 ? (
                       <div className="text-center py-12">
                         <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <h4 className="text-lg font-medium mb-2">Nenhum pedido encontrado</h4>
@@ -430,14 +456,14 @@ export default function AccountPage() {
                           <div key={order.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                               <div>
-                                <p className="font-semibold">Pedido #{order.numero_pedido || order.id.substring(0, 8)}</p>
+                                <p className="font-semibold">Pedido #{order.numero_pedido}</p>
                                 <p className="text-sm text-muted-foreground">
                                   Data: {formatOrderDate(order.data_criacao)}
                                 </p>
                                 <div className="mt-2 text-sm">
                                   <p className="font-medium">Itens:</p>
                                   <ul className="text-muted-foreground">
-                                    {Array.isArray(order.itens) && order.itens.length > 0 ? (
+                                    {order.itens && order.itens.length > 0 ? (
                                       <>
                                         {order.itens.slice(0, 2).map((item, idx) => (
                                           <li key={item.id || idx} className="truncate">
@@ -469,14 +495,9 @@ export default function AccountPage() {
                             </div>
                             <div className="mt-4 flex gap-2">
                               <Button variant="outline" size="sm" asChild>
-                                <Link href={`/pedidos/${order.id}`}>Ver Detalhes</Link>
+                                <Link href={`/conta/meuspedidos/${order.id}`}>Ver Detalhes</Link>
                               </Button>
                               <Button variant="outline" size="sm">Comprar Novamente</Button>
-                              {order.status === "processando" && (
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                  Cancelar Pedido
-                                </Button>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -495,7 +516,7 @@ export default function AccountPage() {
                       <Button>Adicionar Endereço</Button>
                     </div>
                     
-                    {!Array.isArray(addresses) || addresses.length === 0 ? (
+                    {addresses.length === 0 ? (
                       <div className="text-center py-12">
                         <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <h4 className="text-lg font-medium mb-2">Nenhum endereço cadastrado</h4>
@@ -561,23 +582,9 @@ export default function AccountPage() {
                             <p className="font-medium">Alterar Senha</p>
                             <p className="text-sm text-muted-foreground">Atualize sua senha regularmente</p>
                           </div>
-                          <Button variant="outline">Alterar</Button>
-                        </div>
-
-                        <div className="flex justify-between items-center p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">Autenticação de Dois Fatores</p>
-                            <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança</p>
-                          </div>
-                          <Button variant="outline">Ativar</Button>
-                        </div>
-
-                        <div className="flex justify-between items-center p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">Sessões Ativas</p>
-                            <p className="text-sm text-muted-foreground">Gerencie seus dispositivos conectados</p>
-                          </div>
-                          <Button variant="outline">Verificar</Button>
+                          <Button variant="outline" asChild>
+                            <Link href="/conta/alterar-senha">Alterar</Link>
+                          </Button>
                         </div>
                       </div>
                     </div>

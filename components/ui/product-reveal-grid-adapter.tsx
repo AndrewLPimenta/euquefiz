@@ -75,47 +75,80 @@ export function ProductRevealGridAdapter({
   }
 
   // Buscar produtos por categoria ou destaque
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (categorySlug || featured) {
-        setIsLoading(true)
-        try {
-          console.log('📦 [GridAdapter] Buscando produtos...', { categorySlug, featured })
+ useEffect(() => {
+  const fetchProducts = async () => {
+    if (categorySlug || featured) {
+      setIsLoading(true)
+      try {
+        console.log('📦 [GridAdapter] Buscando produtos...', { categorySlug, featured })
 
-          let fetchedProducts: any[] = []
+        let fetchedProducts: any[] = []
 
-          if (categorySlug) {
-            fetchedProducts = await productsAPI.getByCategory(categorySlug)
-          }
-          else if (featured) {
-            const featuredData = await productsAPI.getFeatured()
-            fetchedProducts = Array.isArray(featuredData) ? featuredData : featuredData.data || []
-          }
-
-          console.log('📦 [GridAdapter] Produtos recebidos:', fetchedProducts.map(p => ({
-            id: p.id,
-            tipo_id: typeof p.id,
-            nome: p.nome
-          })))
-
-          const formattedProducts = fetchedProducts.map(product =>
-            ecommerceHelpers.adaptProductForGrid(product)
-          )
-
-          setProducts(formattedProducts)
-        } catch (error) {
-          console.error('❌ [GridAdapter] Erro ao buscar produtos:', error)
-          toast.error('Erro ao carregar produtos')
-        } finally {
-          setIsLoading(false)
+        if (categorySlug) {
+          // 🚨 CORREÇÃO: Pegue o .data da resposta
+          const categoryResponse = await productsAPI.getByCategory(categorySlug)
+          console.log('📊 [GridAdapter] Resposta da categoria:', categoryResponse)
+          
+          // Extrai o array de produtos
+          fetchedProducts = Array.isArray(categoryResponse) 
+            ? categoryResponse 
+            : categoryResponse?.data || []
+            
+          console.log('📦 [GridAdapter] Produtos extraídos:', fetchedProducts.length, 'itens')
         }
+        else if (featured) {
+          const featuredData = await productsAPI.getFeatured()
+          console.log('📊 [GridAdapter] Resposta destaque:', featuredData)
+          
+          // Extrai o array de produtos
+          fetchedProducts = Array.isArray(featuredData) 
+            ? featuredData 
+            : featuredData?.data || []
+        }
+
+        // 🚨 VERIFIQUE se fetchedProducts é realmente um array
+        console.log('🔍 [GridAdapter] fetchedProducts é array?', Array.isArray(fetchedProducts))
+        console.log('📋 [GridAdapter] Tipo:', typeof fetchedProducts)
+        console.log('📋 [GridAdapter] Valor:', fetchedProducts)
+
+        if (!Array.isArray(fetchedProducts)) {
+          console.error('❌ [GridAdapter] fetchedProducts não é array:', fetchedProducts)
+          toast.error('Erro: formato de dados inválido')
+          setProducts([])
+          return
+        }
+
+        // Debug detalhado dos produtos
+        if (fetchedProducts.length > 0) {
+          console.log('📦 [GridAdapter] Primeiro produto:', {
+            id: fetchedProducts[0]?.id,
+            tipo: typeof fetchedProducts[0]?.id,
+            nome: fetchedProducts[0]?.nome,
+            estrutura: Object.keys(fetchedProducts[0] || {})
+          })
+        }
+
+        const formattedProducts = fetchedProducts.map(product =>
+          ecommerceHelpers.adaptProductForGrid(product)
+        )
+
+        console.log('✅ [GridAdapter] Produtos formatados:', formattedProducts.length)
+        setProducts(formattedProducts)
+        
+      } catch (error) {
+        console.error('❌ [GridAdapter] Erro ao buscar produtos:', error)
+        toast.error('Erro ao carregar produtos')
+        setProducts([]) // Limpa produtos em caso de erro
+      } finally {
+        setIsLoading(false)
       }
     }
+  }
 
-    if (categorySlug || featured) {
-      fetchProducts()
-    }
-  }, [categorySlug, featured])
+  if (categorySlug || featured) {
+    fetchProducts()
+  }
+}, [categorySlug, featured])
   const parsePrice = (value?: string | number): number => {
     if (!value) return 0
     if (typeof value === 'number') return value

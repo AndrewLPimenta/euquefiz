@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Package, ShoppingBag, Calendar, DollarSign, Truck, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react'
-import { ordersAPI } from '@/lib/api'
+import { Package, ShoppingBag, Calendar, DollarSign, Truck, CheckCircle, XCircle, Clock, Loader2, Home, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/auth-context'
+import { clientOrdersAPI } from '@/lib/api'
 
 interface Order {
   id: string
@@ -23,52 +24,33 @@ interface Order {
     quantidade: number
     preco_unitario: number
   }>
-  endereco_entrega?: {
-    rua: string
-    numero: string
-    complemento?: string
-    bairro: string
-    cidade: string
-    estado: string
-    cep: string
-  }
 }
 
 export default function MyOrdersPage() {
   const router = useRouter()
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadOrders()
-  }, [])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        toast.error("Você precisa estar logado para ver seus pedidos")
+        router.push("/entrar")
+      } else {
+        loadOrders()
+      }
+    }
+  }, [authLoading, isAuthenticated, router])
 
   const loadOrders = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      const response = await ordersAPI.getMyOrders()
-      
-      // Tratamento seguro dos dados
-      let ordersArray: Order[] = []
-      
-      if (response && Array.isArray(response)) {
-        ordersArray = response
-      } else if (response && typeof response === 'object') {
-        // Se a API retornar um objeto, tenta extrair o array
-        const possibleArray = response.orders || response.data || response.itens
-        if (Array.isArray(possibleArray)) {
-          ordersArray = possibleArray
-        } else if (response.id) {
-          // Se for um único pedido, coloca em array
-          ordersArray = [response]
-        }
-      }
-      
-      console.log("Pedidos carregados:", ordersArray)
-      setOrders(ordersArray)
+      const ordersData = await clientOrdersAPI.getMyOrders()
+      setOrders(ordersData)
     } catch (error: any) {
       console.error("Erro ao carregar pedidos:", error)
       setError("Erro ao carregar seus pedidos. Tente novamente mais tarde.")
@@ -155,7 +137,7 @@ export default function MyOrdersPage() {
     return order.itens.reduce((total, item) => total + (item.quantidade || 0), 0)
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -171,15 +153,41 @@ export default function MyOrdersPage() {
     )
   }
 
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4">
-          <div className="mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Meus Pedidos</h1>
-            <p className="text-muted-foreground">Acompanhe todos os seus pedidos em um só lugar</p>
+          {/* Cabeçalho */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Link href="/" className="hover:text-primary transition-colors">
+                <Home className="h-4 w-4 inline mr-1" />
+                Home
+              </Link>
+              <span>/</span>
+              <Link href="/conta" className="hover:text-primary transition-colors">
+                <User className="h-4 w-4 inline mr-1" />
+                Minha Conta
+              </Link>
+              <span>/</span>
+              <span className="font-medium">Meus Pedidos</span>
+            </div>
+            
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold">Meus Pedidos</h1>
+                <p className="text-muted-foreground">Acompanhe todos os seus pedidos em um só lugar</p>
+              </div>
+            </div>
           </div>
 
           {error ? (
@@ -278,7 +286,7 @@ export default function MyOrdersPage() {
                               {getStatusIcon(order.status)}
                               <div>
                                 <h3 className="font-semibold text-lg">
-                                  Pedido #{order.numero_pedido || order.id.substring(0, 8)}
+                                  Pedido #{order.numero_pedido}
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -304,7 +312,7 @@ export default function MyOrdersPage() {
                           <div>
                             <h4 className="font-semibold mb-3">Itens do Pedido</h4>
                             <div className="space-y-3">
-                              {order.itens && Array.isArray(order.itens) ? (
+                              {order.itens && order.itens.length > 0 ? (
                                 <>
                                   {order.itens.slice(0, 3).map((item, idx) => (
                                     <div key={item.id || idx} className="flex items-center justify-between">
@@ -351,13 +359,13 @@ export default function MyOrdersPage() {
                             ID do pedido: {order.id}
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" asChild>
-                              <Link href={`/pedidos/${order.id}`}>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/conta/meuspedidos/${order.id}`}>
                                 Ver Detalhes Completos
                               </Link>
                             </Button>
                             {order.status?.toLowerCase() === 'entregue' && (
-                              <Button variant="outline">Comprar Novamente</Button>
+                              <Button variant="outline" size="sm">Comprar Novamente</Button>
                             )}
                           </div>
                         </div>

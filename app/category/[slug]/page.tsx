@@ -40,62 +40,136 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function loadData(reset: boolean = true) {
-      if (!slug) return
-      try {
-        setLoading(true)
-        setError(null)
+ useEffect(() => {
+  async function loadData(reset: boolean = true) {
+    if (!slug) return
+    
+    try {
+      setLoading(true)
+      setError(null)
 
-        // Carrega categoria
-        if (!category || reset) {
-          const categoryResponse = await categoriesAPI.getBySlug(slug)
-          if (!categoryResponse.success) {
-            setError(categoryResponse.error || 'Categoria não encontrada')
-            return
-          }
-          setCategory(categoryResponse.data)
-        }
-
-        // Produtos com paginação
-        const productsResponse: any = await productsAPI.getByCategorySlug(slug, { page, limit })
-
-        // Adaptar produtos
-       const adaptedProducts: Product[] = productsResponse.data.mapp((p: any) => {
-          const adapted = ecommerceHelpers.adaptProductForGrid(p)
-          const idFinal = p.id?.toString() || `placeholder-${Date.now()}-${Math.random()}`
-          return {
-            ...adapted,
-            id: idFinal,
-            name: p.nome || adapted.name,
-            description: p.descricao || adapted.description,
-            detailedDescription: p.descricao_detalhada || adapted.detailedDescription,
-            colors: adapted.colors,
-            category: p.categoria?.nome || adapted.category || "",
-            price: adapted.price,
-            originalPrice: adapted.originalPrice,
-            hoverImage: adapted.hoverImage,
-            rating: p.avaliacao || adapted.rating || 4.5,
-            reviewCount: p.total_avaliacoes || adapted.reviewCount || 0,
-            media: adapted.media,
-          }
-        })
-
-        setProducts(prev => reset ? adaptedProducts : [...prev, ...adaptedProducts])
-        setTotalPages(productsResponse.totalPages || 1)
-
-      } catch (err: any) {
-        console.error(err)
-        toast.error('Erro ao carregar produtos')
-        setError('Não foi possível carregar os produtos desta categoria.')
-      } finally {
-        setLoading(false)
+      // 🚨 PROBLEMA 1: categoryResponse pode ser undefined
+      const categoryResponse = await categoriesAPI.getBySlug(slug)
+      
+      if (!categoryResponse?.success) {
+        setError(categoryResponse?.error || 'Categoria não encontrada')
+        return
       }
+      
+      setCategory(categoryResponse.data)
+
+      // 🚨 PROBLEMA 2: productsResponse pode ter estrutura diferente
+      const productsResponse = await productsAPI.getByCategorySlug(slug, { page, limit })
+      
+      console.log("🔍 DEBUG productsResponse:", productsResponse) // Adicione para debug
+      
+      // 🚨 PROBLEMA 3: productsResponse.data pode ser undefined
+      const productsData = productsResponse?.data || []
+      const totalPagesValue = productsResponse?.totalPages || 1
+
+      // 🚨 PROBLEMA 4: Adaptação de produtos com fallbacks robustos
+      const adaptedProducts: Product[] = productsData.map((p: any) => {
+        try {
+          const adapted = ecommerceHelpers.adaptProductForGrid(p)
+          
+          // Garantir que temos um ID válido
+          const idFinal = p?.id?.toString() || 
+                         adapted?.id?.toString() || 
+                         `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          
+          // Garantir nome e descrição
+          const productName = p?.nome || adapted?.name || "Produto sem nome"
+          const productDescription = p?.descricao || adapted?.description || ""
+          
+          // Garantir preço formatado
+          const priceStr = adapted?.price || "R$ 0,00"
+          
+          // Garantir cores
+          const productColors = adapted?.colors || ["Default"]
+          
+          // Garantir mídia
+          const productMedia = adapted?.media || [{
+            type: "image" as const,
+            url: "/placeholder.svg",
+            thumbnail: "/placeholder.svg"
+          }]
+
+          return {
+            id: idFinal,
+            name: productName,
+            description: productDescription,
+            detailedDescription: p?.descricao_detalhada || adapted?.detailedDescription,
+            colors: productColors,
+            category: p?.categoria?.nome || adapted?.category || categoryResponse.data?.nome || "",
+            price: priceStr,
+            originalPrice: adapted?.originalPrice,
+            hoverImage: adapted?.hoverImage || productMedia[0]?.url,
+            rating: p?.avaliacao || adapted?.rating || 4.5,
+            reviewCount: p?.total_avaliacoes || adapted?.reviewCount || 0,
+            media: productMedia,
+          }
+        } catch (error) {
+          console.error("❌ Erro ao adaptar produto:", p, error)
+          // Retorna um produto placeholder em caso de erro
+          return {
+            id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: "Produto não disponível",
+            description: "Este produto não pôde ser carregado",
+            colors: ["Default"],
+            category: categoryResponse.data?.nome || "",
+            price: "R$ 0,00",
+            hoverImage: "/placeholder.svg",
+            rating: 0,
+            reviewCount: 0,
+            media: [{
+              type: "image" as const,
+              url: "/placeholder.svg",
+              thumbnail: "/placeholder.svg"
+            }]
+          }
+        }
+      })
+
+      const validProducts = adaptedProducts.filter(p => 
+        p.id && p.name && p.price !== "R$ 0,00"
+      )
+
+      if (validProducts.length === 0 && productsData.length > 0) {
+        console.warn("⚠️ Nenhum produto válido após adaptação")
+        setError("Os produtos não puderam ser carregados corretamente")
+      }
+
+      setProducts(prev => reset ? validProducts : [...prev, ...validProducts])
+      setTotalPages(totalPagesValue)
+
+    } catch (err: any) {
+      console.error("❌ Erro no loadData:", err)
+      
+      // Mensagem de erro mais específica
+      let errorMessage = 'Não foi possível carregar os produtos desta categoria.'
+      
+      if (err.message?.includes('404') || err.message?.includes('não encontrada')) {
+        errorMessage = 'Categoria não encontrada.'
+      } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        errorMessage = 'Problema de conexão. Verifique sua internet.'
+      } else if (err.message?.includes('401') || err.message?.includes('403')) {
+        errorMessage = 'Acesso não autorizado.'
+      }
+      
+      toast.error(errorMessage)
+      setError(errorMessage)
+      
+      // Limpa produtos em caso de erro
+      if (reset) {
+        setProducts([])
+      }
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadData(true)
-  }, [slug, page])
-
+  loadData(true)
+}, [slug, page, limit]) // 🚨 Adicione limit nas dependências
   if (loading) return <LoadingScreen message="Carregando produtos..." />
   if (error || !category) return <ErrorScreen message={error || 'Categoria não encontrada'} />
 
