@@ -76,7 +76,7 @@ export function useCheckout() {
     // Verificar autenticação
     if (!isAuthenticated()) {
       toast.error('Faça login para finalizar a compra')
-      router.push(`/login?redirect=${encodeURIComponent('/checkout')}`)
+      router.push(`/entrar?redirect=${encodeURIComponent('/checkout')}`)
       return { success: false, error: 'Usuário não autenticado' }
     }
 
@@ -148,7 +148,7 @@ export function useCheckout() {
         errorMessage = 'Sessão expirada. Faça login novamente.'
         localStorage.removeItem('cliente_token')
         sessionStorage.removeItem('cliente_token')
-        router.push(`/login?redirect=${encodeURIComponent('/checkout')}`)
+        router.push(`/entrar?redirect=${encodeURIComponent('/checkout')}`)
       } else if (error.message.includes('400')) {
         errorMessage = 'Dados inválidos. Verifique as informações.'
       } else if (error.message.includes('500')) {
@@ -170,7 +170,7 @@ export function useCheckout() {
   const initiateCheckout = () => {
     if (!isAuthenticated()) {
       toast.info('Faça login para finalizar a compra')
-      router.push(`/login?redirect=${encodeURIComponent('/checkout')}`)
+      router.push(`/entrar?redirect=${encodeURIComponent('/checkout')}`)
       return
     }
 

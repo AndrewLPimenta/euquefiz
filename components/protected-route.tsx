@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ 
   children, 
   requireAuth = true,
-  redirectTo = '/login',
+  redirectTo = '/entrar',
   requiredPermission
 }: ProtectedRouteProps) {
   const router = useRouter()

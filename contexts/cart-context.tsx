@@ -210,27 +210,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  /* =======================
-     CLEAR CART
-  ======================= */
-  const clearCart = async () => {
-    try {
-      setIsLoading(true)
+/* =======================
+   CLEAR CART 
+======================= */
+const clearCart = async () => {
+  try {
+    setIsLoading(true);
 
-      if (checkAuth()) {
-        await cartAPI.clearCart()
+    if (checkAuth()) {
+      try {
+        await cartAPI.clearCart();
+      } catch (err: any) {
+        // 🔹 ignora erro 400 (carrinho já vazio)
+        if (!err.message.includes("400")) {
+          console.error("❌ Erro ao limpar carrinho:", err);
+          toast.error("Erro ao limpar carrinho");
+        }
       }
-
-      setItems([])
-      localStorage.removeItem("cart")
-      toast.success("Carrinho limpo")
-    } catch (err) {
-      console.error("❌ Erro ao limpar carrinho:", err)
-      toast.error("Erro ao limpar carrinho")
-    } finally {
-      setIsLoading(false)
     }
+
+    setItems([]);
+    localStorage.removeItem("cart");
+    toast.success("Carrinho limpo");
+  } finally {
+    setIsLoading(false);
   }
+};
+
 
   /* =======================
      UI HELPERS

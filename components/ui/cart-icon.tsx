@@ -1,3 +1,4 @@
+//components/ui/cart-icon.tsx
 "use client"
 
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react'
@@ -50,7 +51,7 @@ export function CartIcon() {
     
     if (!isAuthenticated()) {
       toast.info('Faça login para finalizar a compra')
-      router.push('/login?redirect=/checkout')
+      router.push('/entrar?redirect=/checkout')
       closeCart()
       return
     }

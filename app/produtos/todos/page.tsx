@@ -5,68 +5,30 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductRevealGridAdapter } from "@/components/ui/product-reveal-grid-adapter"
 import WhatsAppButton from "@/components/whatsapp"
-import { useParams } from 'next/navigation'
-import { categoriesAPI, productsAPI, ecommerceHelpers } from '@/lib/api'
+import { productsAPI, ecommerceHelpers } from '@/lib/api'
 import { toast } from 'sonner'
 import Head from 'next/head'
 
-interface Product {
-  id: string 
-  name: string
-  description: string
-  detailedDescription?: string
-  colors: string[]
-  category: string
-  price: string
-  originalPrice?: string
-  hoverImage?: string
-  rating?: number
-  reviewCount?: number
-  media?: Array<{
-    type: "image" | "video"
-    url: string
-    thumbnail?: string
-  }>
-}
-
-export default function CategoryPage() {
-  const params = useParams()
-  const slug = params.slug as string
+export default function AllProductsPage() {
   const [page, setPage] = useState(1)
   const [limit] = useState(12)
   const [totalPages, setTotalPages] = useState(1)
-  const [category, setCategory] = useState<any>(null)
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData(reset: boolean = true) {
-      if (!slug) return
       try {
         setLoading(true)
         setError(null)
+        const productsResponse: any = await productsAPI.getAll()
 
-        // Carrega categoria
-        if (!category || reset) {
-          const categoryResponse = await categoriesAPI.getBySlug(slug)
-          if (!categoryResponse.success) {
-            setError(categoryResponse.error || 'Categoria não encontrada')
-            return
-          }
-          setCategory(categoryResponse.data)
-        }
-
-        // Produtos com paginação
-        const productsResponse: any = await productsAPI.getByCategorySlug(slug, { page, limit })
-
-        // Adaptar produtos
-       const adaptedProducts: Product[] = productsResponse.data.mapp((p: any) => {
+        const adaptedProducts = (productsResponse.data || []).map((p: any) => {
           const adapted = ecommerceHelpers.adaptProductForGrid(p)
-          const idFinal = p.id?.toString() || `placeholder-${Date.now()}-${Math.random()}`
           return {
             ...adapted,
-            id: idFinal,
+            id: p.id?.toString() || `placeholder-${Date.now()}-${Math.random()}`,
             name: p.nome || adapted.name,
             description: p.descricao || adapted.description,
             detailedDescription: p.descricao_detalhada || adapted.detailedDescription,
@@ -86,44 +48,44 @@ export default function CategoryPage() {
 
       } catch (err: any) {
         console.error(err)
+        setError('Não foi possível carregar os produtos.')
         toast.error('Erro ao carregar produtos')
-        setError('Não foi possível carregar os produtos desta categoria.')
       } finally {
         setLoading(false)
       }
     }
 
     loadData(true)
-  }, [slug, page])
+  }, [page])
 
-  if (loading) return <LoadingScreen message="Carregando produtos..." />
-  if (error || !category) return <ErrorScreen message={error || 'Categoria não encontrada'} />
+  if (loading) return <LoadingScreen message="Carregando todos os produtos..." />
+  if (error) return <ErrorScreen message={error} />
 
   return (
     <>
       <Head>
-        <title>{category.nome} | Euquefiz</title>
-        <meta name="description" content={category.descricao || `Coleção exclusiva de ${category.nome.toLowerCase()}`} />
+        <title>Todos os Produtos | Euquefiz</title>
+        <meta name="description" content="Explore todos os produtos disponíveis na nossa loja." />
       </Head>
 
       <div className="min-h-screen">
         <Header />
         <main className="flex flex-col items-center justify-center w-full flex-2 px-4 sm:px-6 lg:px-10 mt-8 sm:mt-10">
-          <CategoryHeader category={category} productsCount={products.length} />
+          <CategoryHeader title="Todos os Produtos" productsCount={products.length} />
           {products.length > 0 ? (
             <div className="w-full max-w-7xl">
-              <ProductRevealGridAdapter products={products} title="" description="" columns={4} categorySlug={slug} />
+              <ProductRevealGridAdapter products={products} title="" description="" columns={4} />
             </div>
-          ) : <EmptyState categoryName={category.nome} />}
+          ) : <EmptyState categoryName="Todos os Produtos" />}
         </main>
-        <WhatsAppButton message={`Olá, gostaria de mais informações sobre os produtos da categoria ${category.nome}!`} buttonText="" position="bottom-right" />
+        <WhatsAppButton message={`Olá, gostaria de mais informações sobre os produtos!`} buttonText="" position="bottom-right" />
         <Footer />
       </div>
     </>
   )
 }
 
-// ✅ Componentes auxiliares
+// Reaproveitando componentes auxiliares
 const LoadingScreen = ({ message }: { message: string }) => (
   <div className="min-h-screen flex flex-col items-center justify-center">
     <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-400 mb-4"></div>
@@ -138,12 +100,11 @@ const ErrorScreen = ({ message }: { message: string }) => (
   </div>
 )
 
-const CategoryHeader = ({ category, productsCount }: { category: any, productsCount: number }) => (
+const CategoryHeader = ({ title, productsCount }: { title: string, productsCount: number }) => (
   <div className="w-full max-w-7xl mb-8 sm:mb-10 bg-background">
     <div className="bg-background color-text rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-900 mb-2">{category.nome}</h1>
-        <p className="text-600 max-w-2xl">{category.descricao || `Explore nossa coleção exclusiva de ${category.nome.toLowerCase()}.`}</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-900 mb-2">{title}</h1>
       </div>
       <div className="mt-4 sm:mt-0">
         <span className="inline-block text-800 px-4 py-2 rounded-full text-sm font-medium shadow-sm">{productsCount} {productsCount === 1 ? 'produto' : 'produtos'}</span>
@@ -154,6 +115,6 @@ const CategoryHeader = ({ category, productsCount }: { category: any, productsCo
 
 const EmptyState = ({ categoryName }: { categoryName: string }) => (
   <div className="w-full max-w-7xl text-center py-12">
-    <p>Ainda não temos produtos na categoria {categoryName}.</p>
+    <p>Ainda não temos produtos em {categoryName}.</p>
   </div>
 )

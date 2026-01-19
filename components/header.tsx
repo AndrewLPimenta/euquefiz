@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -17,24 +16,25 @@ import {
   Heart,
   UserPlus,
   Search,
-  Bell
+  MessageSquare,
+  Star,
+  CheckCircle,
+  Award,
+  Shield,
+  Truck,
+  HelpCircle,
+  Home,
+  Tag,
+  Sparkles
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { CartIcon } from "@/components/ui/cart-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { useCart } from "@/contexts/cart-context"
 import { categoriesAPI } from "@/lib/api"
-import { MessageSquare, Star, CheckCircle, Award, Shield } from "lucide-react";
-import Router from "next/router"
-
-interface MenuItem {
-  name: string;
-  href: string;
-  badge?: string; 
-}
 
 interface Category {
   id: string
@@ -56,23 +56,32 @@ export function Header() {
   const [categories, setCategories] = useState<Category[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const productsDropdownRef = useRef<HTMLDivElement>(null)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
     loadCategories()
+    
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const loadCategories = async () => {
-    try {
-      const response = await categoriesAPI.getAll()
-      const cats = response.data || response || []
-      setCategories(cats)
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error)
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 100)
     }
-  }
+  }, [isSearchOpen])
 
-  // Bloquear scroll quando menu está aberto
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden'
@@ -85,37 +94,50 @@ export function Header() {
     }
   }, [mobileMenuOpen])
 
-  // Fechar menus quando clicar fora
+  // Fechar dropdowns quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       
+      // Fechar menu de produtos no desktop
+      if (window.innerWidth >= 1024) {
+        if (productsDropdownRef.current && !productsDropdownRef.current.contains(target)) {
+          const productsButton = document.querySelector('[data-products-button]')
+          if (productsButton && !productsButton.contains(target)) {
+            setProductsMenuOpen(false)
+          }
+        }
+      }
+      
+      // Fechar menu de usuário no desktop
       if (window.innerWidth >= 768) {
-        // Fechar menu de produtos
-        const productsButton = document.querySelector('[data-products-button]')
-        const dropdown = document.querySelector('[data-products-dropdown]')
-        
-        if (productsButton && dropdown && 
-            !productsButton.contains(target) && 
-            !dropdown.contains(target)) {
-          setProductsMenuOpen(false)
+        if (userDropdownRef.current && !userDropdownRef.current.contains(target)) {
+          const userButton = document.querySelector('[data-user-button]')
+          if (userButton && !userButton.contains(target)) {
+            setUserMenuOpen(false)
+          }
         }
-
-        // Fechar menu de usuário
-        const userButton = document.querySelector('[data-user-button]')
-        const userDropdown = document.querySelector('[data-user-dropdown]')
-        
-        if (userButton && userDropdown && 
-            !userButton.contains(target) && 
-            !userDropdown.contains(target)) {
-          setUserMenuOpen(false)
-        }
+      }
+      
+      // Fechar overlay de busca
+      if (isSearchOpen && !target.closest('[data-search-container]')) {
+        setIsSearchOpen(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [isSearchOpen])
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getAll()
+      const cats = response.data || response || []
+      setCategories(cats)
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -126,131 +148,218 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+      router.push(`/produtos?q=${encodeURIComponent(searchQuery)}`)
       setIsSearchOpen(false)
       setSearchQuery("")
+      setMobileMenuOpen(false)
     }
+  }
+
+  const quickSearch = (term: string) => {
+    router.push(`/produtos?q=${encodeURIComponent(term)}`)
+    setIsSearchOpen(false)
+    setSearchQuery("")
   }
 
   if (!mounted) {
     return null
   }
 
-  const navigation = [
-    { name: "Início", href: "/" },
+  const mainNavigation = [
+    { 
+      name: "Início", 
+      href: "/", 
+      icon: <Home className="h-4 w-4" />
+    },
     { 
       name: "Produtos", 
-      href: "/products",
+      href: "/produtos",
+      icon: <ShoppingBag className="h-4 w-4" />,
       hasDropdown: true,
     },
-    { name: "Ofertas", href: "/ofertas", badge: "" },
-    { name: "Novidades", href: "/novidades", badge: "" },
+    { 
+      name: "Ofertas", 
+      href: "/produtos?ofertas=true", 
+      icon: <Tag className="h-4 w-4" />,
+      badge: "HOT"
+    },
+    { 
+      name: "Novidades", 
+      href: "/produtos?novidades=true", 
+      icon: <Sparkles className="h-4 w-4" />
+    },
+    { 
+      name: "Sobre", 
+      href: "/sobre", 
+      icon: <Star className="h-4 w-4" />
+    },
+    { 
+      name: "Contato", 
+      href: "/contato", 
+      icon: <MessageSquare className="h-4 w-4" />
+    },
   ]
 
   return (
     <>
-      {/* Overlay escuro com blur */}
+      {/* Overlays */}
       <div
         className={cn(
           "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-all duration-300",
-          mobileMenuOpen || (productsMenuOpen && window.innerWidth < 768) || isSearchOpen
+          mobileMenuOpen || isSearchOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         )}
         onClick={() => {
-          setMobileMenuOpen(false)
-          if (window.innerWidth < 768) {
-            setProductsMenuOpen(false)
-          }
-          setIsSearchOpen(false)
+          if (mobileMenuOpen) setMobileMenuOpen(false)
+          if (isSearchOpen) setIsSearchOpen(false)
         }}
       />
 
       {/* Search Overlay */}
-      <div className={cn(
-        "fixed inset-0 z-50 bg-background/95 backdrop-blur-xl transition-all duration-300",
-        isSearchOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-      )}>
-        <div className="container mx-auto px-4 pt-20">
-          <div className="max-w-2xl mx-auto">
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="O que você está procurando hoje?"
-                className="w-full px-6 py-4 text-lg bg-background border-2 border-primary/30 rounded-2xl focus:outline-none focus:border-primary"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-            </form>
-            
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Sugestões populares</h3>
-              <div className="flex flex-wrap gap-2">
-                {['Calçados', 'Bolsas', 'Presentes', 'Decoração', 'Acessórios'].map((term) => (
-                  <button
-                    key={term}
+      <div 
+        className={cn(
+          "fixed inset-0 z-50 transition-all duration-300",
+          isSearchOpen 
+            ? "opacity-100 pointer-events-auto" 
+            : "opacity-0 pointer-events-none"
+        )}
+        data-search-container
+      >
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-xl" />
+        <div className="relative z-10 h-full overflow-y-auto">
+          <div className="container mx-auto px-4 pt-20 pb-8">
+            <div className="max-w-3xl mx-auto">
+              <form onSubmit={handleSearch} className="relative mb-8">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Digite o nome do produto, categoria ou marca..."
+                  className="w-full pl-12 pr-32 py-4 text-base bg-background border-2 border-primary/20 rounded-xl focus:outline-none focus:border-primary placeholder:text-muted-foreground"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
-                      router.push(`/search?q=${encodeURIComponent(term)}`)
                       setIsSearchOpen(false)
+                      setSearchQuery("")
                     }}
-                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-colors"
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    {term}
-                  </button>
-                ))}
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Buscar
+                  </Button>
+                </div>
+              </form>
+              
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+                    Sugestões de busca
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['Calçados', 'Bolsas', 'Presentes', 'Decoração', 'Acessórios', 'Eletrônicos', 'Livros', 'Moda'].map((term) => (
+                      <button
+                        key={term}
+                        onClick={() => quickSearch(term)}
+                        className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-colors text-sm"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+                    Categorias populares
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {categories.slice(0, 6).map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/categoria/${category.slug}`}
+                        onClick={() => setIsSearchOpen(false)}
+                        className="p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors group"
+                      >
+                        <div className="font-medium text-sm mb-1 truncate">{category.nome}</div>
+                        <div className="text-xs text-muted-foreground group-hover:text-foreground">
+                          {category.subcategorias?.length || 0} subcategorias
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Top Bar */}
-      <div className="bg-primary text-primary-foreground text-sm py-2 hidden md:block">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <span>🎁 Frete grátis em compras acima de R$ 100</span>
-            <span className="hidden lg:inline">|</span>
-            <span className="hidden lg:inline">📦 Entrega para todo Brasil</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/ajuda" className="hover:text-primary-foreground/80 transition-colors">
-              Ajuda & Suporte
-            </Link>
-            <Link href="/rastrear" className="hover:text-primary-foreground/80 transition-colors">
-              Rastrear Pedido
-            </Link>
+      {/* Top Bar - Apenas Desktop */}
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm py-2 hidden lg:block">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-6">
+              <span className="flex items-center gap-2">
+                <Truck className="h-3 w-3" />
+                Frete grátis acima de R$ 100
+              </span>
+              <span className="h-3 w-px bg-primary-foreground/30" />
+              <span className="flex items-center gap-2">
+                <Shield className="h-3 w-3" />
+                Compra 100% segura
+              </span>
+            </div>
+            <div className="flex items-center gap-6">
+              <Link href="/ajuda" className="hover:text-primary-foreground/80 transition-colors flex items-center gap-1">
+                <HelpCircle className="h-3 w-3" />
+                Ajuda & Suporte
+              </Link>
+              <span className="h-3 w-px bg-primary-foreground/30" />
+              <Link href="/rastrear" className="hover:text-primary-foreground/80 transition-colors">
+                Rastrear Pedido
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      {/* Main Header */}
+      <header className={cn(
+        "sticky top-0 z-40 w-full bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-shadow duration-300",
+        isScrolled ? "border-b border-border/40 shadow-lg" : ""
+      )}>
         <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
+          <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2 z-50 flex-shrink-0">
-              <Image
-                src="/logo-darkMode.png"
-                alt="Euquefiz Logo"
-                width={45}
-                height={45}
-                className="transition-transform duration-300 hover:scale-110"
-              />
-              <div className="hidden lg:block">
-                <div className="font-bold text-xl tracking-tight"></div>
-                <div className="text-xs text-muted-foreground"></div>
+              <div className="relative w-10 h-10">
+                <Image
+                  src="/logo-darkMode.png"
+                  alt="Euquefiz Logo"
+                  fill
+                  className="object-contain transition-transform duration-300 hover:scale-110"
+                  sizes="40px"
+                  priority
+                />
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-6 mx-8 flex-1">
-              {navigation.map((item) => (
+            {/* Desktop Navigation - LG+ */}
+            <nav className="hidden lg:flex items-center gap-1 mx-4 flex-1">
+              {mainNavigation.map((item) => (
                 <div key={item.href} className="relative">
                   {item.hasDropdown ? (
                     <>
@@ -261,108 +370,105 @@ export function Header() {
                           setUserMenuOpen(false)
                         }}
                         className={cn(
-                          "text-sm font-medium transition-all duration-300",
-                          "flex items-center gap-1 px-3 py-2 rounded-lg",
-                          pathname.startsWith("/products") || pathname.startsWith("/category")
+                          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-primary/10",
+                          (pathname.startsWith("/produtos") || pathname.startsWith("/categoria") || productsMenuOpen)
                             ? "text-foreground bg-primary/5" 
-                            : "text-muted-foreground hover:text-foreground hover:bg-primary/10"
+                            : "text-muted-foreground"
                         )}
                       >
-                        {item.name}
+                        {item.icon}
+                        <span className="whitespace-nowrap">{item.name}</span>
                         <ChevronDown className={cn(
-                          "h-4 w-4 transition-transform duration-300",
+                          "h-3 w-3 transition-transform duration-300",
                           productsMenuOpen ? "rotate-180" : ""
                         )} />
+                        {item.badge && (
+                          <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
                       </button>
                       
                       {/* Mega Menu de Produtos */}
-                      <div
-                        data-products-dropdown
-                        className={cn(
-                          "absolute top-full left-0 mt-2",
-                          "w-[800px] bg-background border border-border rounded-2xl shadow-2xl",
-                          "transition-all duration-300 origin-top",
-                          "opacity-0 scale-95 pointer-events-none",
-                          productsMenuOpen 
-                            ? "opacity-100 scale-100 pointer-events-auto" 
-                            : ""
-                        )}
-                      >
-                        <div className="p-6 grid grid-cols-3 gap-8">
-                          {categories.slice(0, 6).map((category) => (
-                            <div key={category.id} className="space-y-3">
-                              <Link
-                                href={`/category/${category.slug}`}
-                                onClick={() => setProductsMenuOpen(false)}
-                                className="text-sm font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                              >
-                                <span>{category.nome}</span>
-                                <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </Link>
-                              
-                              {/* Subcategorias */}
-                              {category.subcategorias && category.subcategorias.length > 0 && (
-                                <ul className="space-y-2 pl-2">
-                                  {category.subcategorias.slice(0, 4).map((subcat) => (
-                                    <li key={subcat.id}>
-                                      <Link
-                                        href={`/category/${subcat.slug}`}
-                                        onClick={() => setProductsMenuOpen(false)}
-                                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                                      >
-                                        {subcat.nome}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                  {category.subcategorias.length > 4 && (
-                                    <li>
-                                      <Link
-                                        href={`/category/${category.slug}`}
-                                        onClick={() => setProductsMenuOpen(false)}
-                                        className="text-sm text-primary hover:text-primary/80 font-medium"
-                                      >
-                                        Ver todas...
-                                      </Link>
-                                    </li>
-                                  )}
-                                </ul>
-                              )}
-                            </div>
-                          ))}
-                          
-                          {/* Banner Promocional */}
-                          <div className="col-span-3 mt-4 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="font-bold">Ofertas Especiais 🎯</h3>
-                                <p className="text-sm text-muted-foreground">Até 50% off em produtos selecionados</p>
+                      {productsMenuOpen && (
+                        <div
+                          ref={productsDropdownRef}
+                          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 min-w-[800px] max-w-[90vw] bg-background border border-border rounded-xl shadow-2xl overflow-hidden"
+                          style={{ left: '50%', transform: 'translateX(-50%)' }}
+                        >
+                          <div className="p-6 grid grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
+                            {categories.slice(0, 8).map((category) => (
+                              <div key={category.id} className="space-y-2">
+                                <Link
+                                  href={`/categoria/${category.slug}`}
+                                  onClick={() => setProductsMenuOpen(false)}
+                                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                                >
+                                  <span className="border-b-2 border-transparent group-hover:border-primary pb-1">
+                                    {category.nome}
+                                  </span>
+                                  <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </Link>
+                                
+                                {category.subcategorias && category.subcategorias.length > 0 && (
+                                  <ul className="space-y-1">
+                                    {category.subcategorias.slice(0, 5).map((subcat) => (
+                                      <li key={subcat.id}>
+                                        <Link
+                                          href={`/categoria/${subcat.slug}`}
+                                          onClick={() => setProductsMenuOpen(false)}
+                                          className="text-sm text-muted-foreground hover:text-primary transition-colors block py-1"
+                                        >
+                                          {subcat.nome}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
                               </div>
-                              <Button size="sm" asChild>
-                                <Link href="/ofertas">Ver Ofertas</Link>
-                              </Button>
+                            ))}
+                            
+                            <div className="col-span-4 mt-4 p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 rounded-lg border">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <Tag className="h-5 w-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-bold text-base">Ofertas Imperdíveis</h3>
+                                    <p className="text-xs text-muted-foreground">Até 60% off em categorias selecionadas</p>
+                                  </div>
+                                </div>
+                                <Button size="sm" asChild className="bg-primary hover:bg-primary/90">
+                                  <Link href="/produtos?ofertas=true">Ver Todas</Link>
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </>
                   ) : (
                     <Link
                       href={item.href}
                       className={cn(
-                        "text-sm font-medium transition-all duration-300 relative group px-3 py-2",
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 relative group whitespace-nowrap hover:bg-primary/10",
                         pathname === item.href 
-                          ? "text-foreground" 
-                          : "text-muted-foreground hover:text-foreground",
+                          ? "text-foreground bg-primary/5" 
+                          : "text-muted-foreground"
                       )}
                     >
-                      <span className="flex items-center gap-1">
-                        {item.name}
-                        {item.badge && <span>{item.badge}</span>}
-                      </span>
+                      {item.icon}
+                      {item.name}
+                      {item.badge && (
+                        <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
                       <span className={cn(
-                        "absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary",
-                        "transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300",
-                        pathname === item.href ? "scale-x-100" : ""
+                        "absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-secondary",
+                        "group-hover:w-3/4 transition-all duration-300",
+                        pathname === item.href ? "w-3/4" : ""
                       )} />
                     </Link>
                   )}
@@ -370,15 +476,16 @@ export function Header() {
               ))}
             </nav>
 
-            {/* Search Bar (Desktop) */}
-            <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+            {/* Search Bar - MD/LG */}
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
               <form onSubmit={handleSearch} className="relative w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar produtos..."
-                  className="w-full px-4 py-2 text-sm bg-secondary/50 border border-border rounded-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  placeholder="Buscar produtos, marcas..."
+                  className="w-full pl-11 pr-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-full focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 />
                 <button
                   type="submit"
@@ -390,18 +497,18 @@ export function Header() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-4 z-50">
-              {/* Search Button (Mobile) */}
+            <div className="flex items-center gap-2 md:gap-3 z-50 flex-shrink-0">
+              {/* Search Button - Mobile */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsSearchOpen(true)}
-                className="lg:hidden hover:bg-primary/20"
+                className="md:hidden hover:bg-primary/20 h-10 w-10"
               >
                 <Search className="h-5 w-5" />
               </Button>
 
-              {/* User Menu (Desktop) */}
+              {/* User Menu - MD+ */}
               <div className="hidden md:block relative">
                 {isAuthenticated ? (
                   <>
@@ -413,113 +520,122 @@ export function Header() {
                       }}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
                     >
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                         <User className="h-4 w-4" />
                       </div>
-                      <div className="text-left hidden lg:block">
-                        <div className="text-sm font-medium truncate max-w-[120px]">
+                      <div className="text-left hidden lg:block truncate max-w-[120px]">
+                        <div className="text-sm font-medium truncate">
                           Olá, {user?.nome?.split(' ')[0] || 'Cliente'}
                         </div>
                         <div className="text-xs text-muted-foreground">Minha conta</div>
                       </div>
                       <ChevronDown className={cn(
-                        "h-4 w-4 transition-transform duration-300",
+                        "h-4 w-4 transition-transform duration-300 flex-shrink-0",
                         userMenuOpen ? "rotate-180" : ""
                       )} />
                     </button>
 
                     {/* User Dropdown */}
-                    <div
-                      data-user-dropdown
-                      className={cn(
-                        "absolute top-full right-0 mt-2",
-                        "w-64 bg-background border border-border rounded-xl shadow-2xl",
-                        "transition-all duration-300 origin-top-right",
-                        "opacity-0 scale-95 pointer-events-none",
-                        userMenuOpen 
-                          ? "opacity-100 scale-100 pointer-events-auto" 
-                          : ""
-                      )}
-                    >
-                      <div className="p-4 border-b border-border">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{user?.nome}</div>
-                            <div className="text-sm text-muted-foreground">{user?.email}</div>
+                    {userMenuOpen && (
+                      <div
+                        ref={userDropdownRef}
+                        className="absolute top-full right-0 mt-2 w-64 bg-background border border-border rounded-xl shadow-2xl z-50"
+                      >
+                        <div className="p-4 border-b border-border">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                              <User className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-sm truncate">{user?.nome}</div>
+                              <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="p-2">
-                        <Link
-                          href="/minha-conta"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
-                        >
-                          <User className="h-4 w-4" />
-                          <span>Minha Conta</span>
-                        </Link>
-                        <Link
-                          href="/meus-pedidos"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
-                        >
-                          <ShoppingBag className="h-4 w-4" />
-                          <span>Meus Pedidos</span>
-                        </Link>
-                        <Link
-                          href="/favoritos"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
-                        >
-                          <Heart className="h-4 w-4" />
-                          <span>Favoritos</span>
-                        </Link>
                         
-                        <div className="border-t border-border my-2"></div>
-                        
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          <span>Sair</span>
-                        </button>
+                        <div className="p-2">
+                          <Link
+                            href="/conta"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors group text-sm"
+                          >
+                            <User className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                            <span>Minha Conta</span>
+                          </Link>
+                          <Link
+                            href="/meus-pedidos"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors group text-sm"
+                          >
+                            <ShoppingBag className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                            <span>Meus Pedidos</span>
+                          </Link>
+                          <Link
+                            href="/conta/favoritos"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors group text-sm"
+                          >
+                            <Heart className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                            <span>Favoritos</span>
+                          </Link>
+                          
+                          <div className="border-t border-border my-2"></div>
+                          
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-left group text-sm"
+                          >
+                            <LogOut className="h-4 w-4 group-hover:animate-pulse" />
+                            <span>Sair da Conta</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" asChild className="hidden lg:inline-flex">
-                      <Link href="/login">Entrar</Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      asChild 
+                      className="hidden lg:inline-flex hover:bg-primary/10 text-sm"
+                    >
+                      <Link href="/entrar">
+                        <User className="h-4 w-4 mr-2" />
+                        Entrar
+                      </Link>
                     </Button>
-                    <Button size="sm" asChild>
-                      <Link href="/cadastro">Cadastre-se</Link>
+                    <Button 
+                      size="sm" 
+                      asChild
+                      className="bg-primary hover:bg-primary/90 text-sm"
+                    >
+                      <Link href="/cadastro">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Cadastrar
+                      </Link>
                     </Button>
                   </div>
                 )}
               </div>
 
               {/* Favoritos */}
-              {/* <Button
+              <Button
                 variant="ghost"
                 size="icon"
                 asChild
-                className="hidden md:inline-flex hover:bg-primary/20 relative"
+                className="hidden md:inline-flex hover:bg-primary/20 relative h-10 w-10"
               >
-                <Link href="/favoritos">
+                <Link href="/conta/favoritos">
                   <Heart className="h-5 w-5" />
                 </Link>
-              </Button> */}
+              </Button>
 
               {/* Carrinho */}
               <div className="relative">
                 <CartIcon />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold">
                     {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
@@ -530,43 +646,28 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hidden md:inline-flex hover:bg-primary/20"
+                className="hidden md:inline-flex hover:bg-primary/20 h-10 w-10"
               >
                 {theme === "dark" ? (
-                  <Sun className="h-5 w-5 transition-all duration-300 hover:rotate-90" />
+                  <Sun className="h-5 w-5" />
                 ) : (
-                  <Moon className="h-5 w-5 transition-all duration-300 hover:-rotate-12" />
+                  <Moon className="h-5 w-5" />
                 )}
               </Button>
 
-              {/* Menu Hamburguer */}
+              {/* Menu Hamburguer - Mobile */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden relative w-10 h-10 hover:bg-primary/10"
+                className="md:hidden h-10 w-10 hover:bg-primary/10"
                 aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
               >
-                <div className="relative w-5 h-5">
-                  <span className={cn(
-                    "absolute left-0 w-5 h-0.5 bg-foreground transition-all duration-300 transform",
-                    mobileMenuOpen 
-                      ? "rotate-45 bg-primary top-1/2 -translate-y-1/2" 
-                      : "top-0"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 w-5 h-0.5 bg-foreground transition-all duration-300 top-1/2 -translate-y-1/2",
-                    mobileMenuOpen 
-                      ? "opacity-0" 
-                      : "opacity-100"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 w-5 h-0.5 bg-foreground transition-all duration-300 transform",
-                    mobileMenuOpen 
-                      ? "-rotate-45 bg-primary top-1/2 -translate-y-1/2" 
-                      : "bottom-0"
-                  )} />
-                </div>
+                {mobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </div>
@@ -574,32 +675,41 @@ export function Header() {
 
         {/* Menu Móvel */}
         <div
+          ref={mobileMenuRef}
           className={cn(
-            "fixed top-0 right-0 h-full z-50 md:hidden",
-            "w-full max-w-sm bg-background",
-            "transform transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-            "shadow-2xl shadow-black/30",
-            mobileMenuOpen
-              ? "translate-x-0 opacity-100"
-              : "translate-x-full opacity-0"
+            "fixed inset-0 z-50 md:hidden",
+            "bg-background flex flex-col",
+            "transition-transform duration-300 ease-in-out",
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           )}
-          style={{ height: '100vh', top: '0' }}
         >
-          {/* Cabeçalho do menu */}
-          <div className="h-16 border-b border-border/40 flex items-center justify-between px-6">
+          {/* Cabeçalho do Menu */}
+          <div className="h-16 border-b border-border/40 flex items-center justify-between px-4 bg-background flex-shrink-0">
             <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <>
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4" />
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                    <User className="h-5 w-5" />
                   </div>
-                  <div>
-                    <div className="font-medium text-sm">Olá, {user?.nome?.split(' ')[0]}</div>
-                    <div className="text-xs text-muted-foreground">Minha conta</div>
+                  <div className="max-w-[200px]">
+                    <div className="font-medium text-sm truncate">
+                      Olá, {user?.nome?.split(' ')[0] || 'Usuário'}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {user?.email || 'Minha conta'}
+                    </div>
                   </div>
                 </>
               ) : (
-                <div className="font-semibold">Menu</div>
+                <>
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold">Menu</div>
+                    <div className="text-xs text-muted-foreground">Faça login para mais opções</div>
+                  </div>
+                </>
               )}
             </div>
             
@@ -613,229 +723,237 @@ export function Header() {
             </Button>
           </div>
 
-          {/* Conteúdo com scroll */}
-          <div className="h-[calc(100vh-4rem)] overflow-y-auto">
-            {/* Seção do usuário */}
-            <div className="p-6 border-b border-border/40">
-              {isAuthenticated ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-bold">{user?.nome}</div>
-                      <div className="text-sm text-muted-foreground">{user?.email}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2">
+          {/* Conteúdo Rolável */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 space-y-6">
+              {/* Ações Rápidas */}
+              <div className="grid grid-cols-2 gap-3">
+                {isAuthenticated ? (
+                  <>
                     <Link
                       href="/conta"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex flex-col items-center p-3 rounded-lg hover:bg-primary/10 transition-colors"
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
                     >
-                      <User className="h-5 w-5 mb-1" />
-                      <span className="text-xs">Conta</span>
+                      <User className="h-5 w-5 mb-2" />
+                      <span className="text-sm font-medium">Minha Conta</span>
                     </Link>
                     <Link
                       href="/meus-pedidos"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex flex-col items-center p-3 rounded-lg hover:bg-primary/10 transition-colors"
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
                     >
-                      <ShoppingBag className="h-5 w-5 mb-1" />
-                      <span className="text-xs">Pedidos</span>
+                      <ShoppingBag className="h-5 w-5 mb-2" />
+                      <span className="text-sm font-medium">Meus Pedidos</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/entrar"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                    >
+                      <User className="h-5 w-5 mb-2" />
+                      <span className="text-sm font-medium">Entrar</span>
                     </Link>
                     <Link
-                      href="/favoritos"
+                      href="/cadastro"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex flex-col items-center p-3 rounded-lg hover:bg-primary/10 transition-colors"
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
                     >
-                      <Heart className="h-5 w-5 mb-1" />
-                      <span className="text-xs">Favoritos</span>
+                      <UserPlus className="h-5 w-5 mb-2" />
+                      <span className="text-sm font-medium">Cadastrar</span>
                     </Link>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-muted-foreground">Faça login para uma experiência personalizada</p>
-                  <div className="flex gap-3">
-                    <Button variant="outline" className="flex-1" asChild onClick={() => setMobileMenuOpen(false)}>
-                      <Link href="/login">Entrar</Link>
-                    </Button>
-                    <Button className="flex-1" asChild onClick={() => setMobileMenuOpen(false)}>
-                      <Link href="/cadastro">
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Cadastrar
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
 
-            {/* Navegação principal */}
-            <div className="p-6">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Navegação
-              </h3>
-              
-              <div className="space-y-1">
-                {navigation.map((item) => (
-                  <div key={item.href}>
-                    {item.hasDropdown ? (
-                      <>
-                        <button
-                          onClick={() => setProductsMenuOpen(!productsMenuOpen)}
-                          className={cn(
-                            "flex items-center justify-between w-full px-4 py-3 rounded-lg",
-                            "text-left font-medium transition-all duration-300",
-                            productsMenuOpen 
-                              ? "bg-primary/5 text-primary" 
-                              : "hover:bg-primary/10"
-                          )}
-                        >
-                          <span className="flex items-center gap-2">
-                            {item.name}
-                            {item.badge && <span className="text-xs">{item.badge}</span>}
-                          </span>
-                          <ChevronRight className={cn(
-                            "h-4 w-4 transition-transform duration-300",
-                            productsMenuOpen ? "rotate-90" : ""
-                          )} />
-                        </button>
+              {/* Navegação Principal */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                  Navegação
+                </h3>
+                <div className="space-y-1">
+                  {mainNavigation.map((item) => (
+                    <div key={item.href}>
+                      {item.hasDropdown ? (
+                        <>
+                          <button
+                            onClick={() => setProductsMenuOpen(!productsMenuOpen)}
+                            className={cn(
+                              "flex items-center justify-between w-full px-4 py-3 rounded-xl",
+                              "text-left font-medium transition-all duration-300",
+                              productsMenuOpen 
+                                ? "bg-primary/5 text-primary" 
+                                : "hover:bg-primary/10"
+                            )}
+                          >
+                            <span className="flex items-center gap-3">
+                              {item.icon}
+                              {item.name}
+                              {item.badge && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </span>
+                            <ChevronRight className={cn(
+                              "h-4 w-4 transition-transform duration-300",
+                              productsMenuOpen ? "rotate-90" : ""
+                            )} />
+                          </button>
 
-                        {/* Submenu Mobile */}
-                        <div className={cn(
-                          "space-y-1 pl-4 overflow-hidden transition-all duration-300",
-                          productsMenuOpen ? "max-h-[1000px] opacity-100 mt-2" : "max-h-0 opacity-0"
-                        )}>
-                          {categories.map((category) => (
+                          {/* Submenu Mobile */}
+                          <div className={cn(
+                            "space-y-1 overflow-hidden transition-all duration-300",
+                            productsMenuOpen ? "max-h-[500px] opacity-100 mt-1 ml-4" : "max-h-0 opacity-0"
+                          )}>
                             <Link
-                              key={category.id}
-                              href={`/category/${category.slug}`}
+                              href="/produtos"
                               onClick={() => {
                                 setMobileMenuOpen(false)
                                 setProductsMenuOpen(false)
                               }}
-                              className="flex items-center justify-between px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors"
+                              className="flex items-center justify-between px-4 py-2.5 rounded-lg hover:bg-primary/10 transition-colors text-primary font-medium"
                             >
-                              <span>{category.nome}</span>
+                              <span>Ver todos os produtos</span>
                               <ChevronRight className="h-4 w-4" />
                             </Link>
-                          ))}
-                          <Link
-                            href="/products"
-                            onClick={() => {
-                              setMobileMenuOpen(false)
-                              setProductsMenuOpen(false)
-                            }}
-                            className="flex items-center justify-between px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors text-primary font-medium"
-                          >
-                            <span>Ver todos os produtos</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </div>
-                      </>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-3 rounded-lg",
-                          "font-medium transition-all duration-300",
-                          pathname === item.href
-                            ? "bg-primary/5 text-primary"
-                            : "hover:bg-primary/10"
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          {item.name}
-                          {item.badge && <span className="text-xs">{item.badge}</span>}
-                        </span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    )}
-                  </div>
-                ))}
+                            
+                            {categories.slice(0, 5).map((category) => (
+                              <Link
+                                key={category.id}
+                                href={`/categoria/${category.slug}`}
+                                onClick={() => {
+                                  setMobileMenuOpen(false)
+                                  setProductsMenuOpen(false)
+                                }}
+                                className="flex items-center justify-between px-4 py-2.5 rounded-lg hover:bg-primary/10 transition-colors"
+                              >
+                                <span className="truncate">{category.nome}</span>
+                                <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                              </Link>
+                            ))}
+                            
+                            <Link
+                              href="/produtos?ofertas=true"
+                              onClick={() => {
+                                setMobileMenuOpen(false)
+                                setProductsMenuOpen(false)
+                              }}
+                              className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 text-primary font-medium"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Tag className="h-3 w-3" />
+                                Ver Ofertas
+                              </span>
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3 rounded-xl",
+                            "font-medium transition-all duration-300",
+                            pathname === item.href
+                              ? "bg-primary/5 text-primary"
+                              : "hover:bg-primary/10"
+                          )}
+                        >
+                          <span className="flex items-center gap-3">
+                            {item.icon}
+                            {item.name}
+                            {item.badge && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-                {/* Links adicionais */}
-                <div className="pt-4 mt-4 border-t border-border/40">
+              {/* Links Úteis */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                  Ajuda & Suporte
+                </h3>
+                <div className="space-y-1">
                   <Link
                     href="/ajuda"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-primary/10 transition-colors"
+                    className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors"
                   >
-                    <span>Ajuda & Suporte</span>
+                    <span className="flex items-center gap-3">
+                      <HelpCircle className="h-4 w-4" />
+                      Ajuda & Suporte
+                    </span>
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                   <Link
                     href="/rastrear"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-primary/10 transition-colors"
+                    className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors"
                   >
-                    <span>Rastrear Pedido</span>
+                    <span className="flex items-center gap-3">
+                      <Truck className="h-4 w-4" />
+                      Rastrear Pedido
+                    </span>
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
               </div>
-            </div>
 
-            {/* Configurações */}
-            <div className="p-6 border-t border-border/40">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Configurações
-              </h3>
-              
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    setTheme(theme === "dark" ? "light" : "dark")
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-primary/10 transition-colors"
-                >
-                  <span className="flex items-center gap-3">
-                    {theme === "dark" ? (
-                      <>
-                        <Sun className="h-5 w-5" />
-                        <span>Tema Claro</span>
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="h-5 w-5" />
-                        <span>Tema Escuro</span>
-                      </>
-                    )}
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-
-                {isAuthenticated && (
+              {/* Configurações */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                  Configurações
+                </h3>
+                <div className="space-y-1">
                   <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    onClick={() => {
+                      setTheme(theme === "dark" ? "light" : "dark")
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
                   >
                     <span className="flex items-center gap-3">
-                      <LogOut className="h-5 w-5" />
-                      <span>Sair da Conta</span>
+                      {theme === "dark" ? (
+                        <>
+                          <Sun className="h-5 w-5" />
+                          <span>Tema Claro</span>
+                        </>
+                      ) : (
+                        <>
+                          <Moon className="h-5 w-5" />
+                          <span>Tema Escuro</span>
+                        </>
+                      )}
                     </span>
                     <ChevronRight className="h-4 w-4" />
                   </button>
-                )}
-              </div>
-            </div>
 
-            {/* Rodapé do menu */}
-            <div className="p-6 bg-/20">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Precisa de ajuda?</p>
-                <Button variant="outline" size="sm" className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
-                  <Link href="/contato">
-<span className="mr-2"><MessageSquare size={18} /></span>
-                    Fale Conosco
-                  </Link>
-                </Button>
+                  {isAuthenticated && (
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
+                    >
+                      <span className="flex items-center gap-3">
+                        <LogOut className="h-5 w-5" />
+                        <span>Sair da Conta</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -844,10 +962,3 @@ export function Header() {
     </>
   )
 }
-
-// <span className="mr-2"><MessageSquare size={18} /></span>
-// <span className="mr-2"><Star size={18} /></span>
-// <span className="mr-2"><CheckCircle size={18} /></span>
-// <span className="mr-2"><Award size={18} /></span>
-// <span className="mr-2"><Shield size={18} /></span>
-// <span className="mr-2"><Heart size={18} /></span>

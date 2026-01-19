@@ -1,10 +1,11 @@
 // lib/api.ts - VERSÃO FINAL CORRIGIDA
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+console.log("🌐 BASE_URL no front-end:", process.env.NEXT_PUBLIC_API_URL);
 
 // 🔄 Função para requisições públicas
 async function fetchPublicAPI(endpoint: string, options: RequestInit = {}) {
   const url = `${BASE_URL}${endpoint}`
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -25,13 +26,13 @@ async function fetchPublicAPI(endpoint: string, options: RequestInit = {}) {
 // 🔄 Função para requisições autenticadas
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const token = getToken()
-  
+
   if (!token) {
     throw new Error('Usuário não autenticado')
   }
-  
+
   const url = `${BASE_URL}${endpoint}`
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -43,11 +44,11 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const errorText = await response.text()
-    
+
     if (response.status === 401) {
       clearToken()
     }
-    
+
     throw new Error(`Erro ${response.status}: ${errorText || response.statusText}`)
   }
 
@@ -65,59 +66,65 @@ export const authAPI = {
     sexo?: string;
     whatsapp?: string;
     endereco?: string;
-  }) => fetchPublicAPI("/api/clients/register", {
+  }) => 
+    
+  fetchPublicAPI("/api/clients/register", {
     method: "POST",
     body: JSON.stringify(data),
   }),
-    
-  login: (data: { email: string; senha: string }) => 
+
+login: (data: { email: string; senha: string }) =>
     fetchPublicAPI("/api/clients/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
-    
-  getProfile: () => {
-    const token = getToken()
-    
-    if (!token) {
-      throw new Error('Token não encontrado')
+
+getProfile: () => {
+  const token = getToken()
+
+  console.log("📝 Token enviado para /api/clients/profile:", token)
+
+  if (!token) {
+    throw new Error('Token não encontrado')
+  }
+
+  return fetch(`${BASE_URL}/api/clients/profile`, {
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  }).then(res => {
+    console.log("📦 Status da resposta:", res.status)
+    if (!res.ok) {
+      if (res.status === 401) clearToken()
+      throw new Error(`Erro ${res.status}: ${res.statusText}`)
     }
-    
-    return fetch(`${BASE_URL}/api/clients/profile`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    }).then(res => {
-      if (!res.ok) {
-        if (res.status === 401) clearToken()
-        throw new Error(`Erro ${res.status}: ${res.statusText}`)
-      }
-      return res.json()
-    })
-  },
+    return res.json()
+  })
+},
+
 }
 
 /* =======================
    CATEGORIAS
 ======================= */
 export const categoriesAPI = {
-  getAll: (options?: { cache?: RequestCache }) => 
+  getAll: (options?: { cache?: RequestCache }) =>
     fetchPublicAPI("/api/categories", { cache: options?.cache || 'no-store' }),
-  
+
   getBySlug: async (slug: string) => {
     try {
       const allCategories = await categoriesAPI.getAll()
-      const categoriesArray = Array.isArray(allCategories) 
-        ? allCategories 
+      const categoriesArray = Array.isArray(allCategories)
+        ? allCategories
         : allCategories?.data || []
-      
+
       const category = categoriesArray.find((cat: any) => cat.slug === slug)
-      
+
       if (!category) {
         return { success: false, error: `Categoria "${slug}" não encontrada` }
       }
-      
+
       return { success: true, data: category }
     } catch (error: any) {
       return { success: false, error: error.message }
@@ -129,47 +136,67 @@ export const categoriesAPI = {
    PRODUTOS
 ======================= */
 export const productsAPI = {
-  getAll: (options?: { cache?: RequestCache }) => 
+  getAll: (options?: { cache?: RequestCache }) =>
     fetchPublicAPI("/api/products?include=all", { cache: options?.cache || 'no-store' }),
-  
+
   getById: (id: string) => fetchPublicAPI(`/api/products/${id}?include=all`),
-  
+
   getBySlug: (slug: string) => fetchPublicAPI(`/api/products/slug/${slug}?include=all`),
-  
-  getByCategorySlug: async (categorySlug: string) => {
-    try {
-      const categoryResponse = await categoriesAPI.getBySlug(categorySlug)
-      
-      if (!categoryResponse.success || !categoryResponse.data) {
-        return []
-      }
-      
-      const category = categoryResponse.data
-      const allProducts = await productsAPI.getAll()
-      
-      const productsArray = Array.isArray(allProducts)
-        ? allProducts
-        : allProducts?.data || allProducts?.produtos || []
-      
-      return productsArray.filter((product: any) => 
-        product.categoria_id === category.id
-      )
-    } catch (error) {
-      return []
+
+getByCategorySlug: async (
+  categorySlug: string,
+  options?: { page?: number; limit?: number }
+): Promise<{
+  data: any[]
+  currentPage: number
+  totalPages: number
+  totalItems: number
+}> => {
+  try {
+    const page = options?.page ?? 1
+    const limit = options?.limit ?? 20
+
+    // 1. Buscar categoria
+    const categoryResponse = await categoriesAPI.getBySlug(categorySlug)
+    if (!categoryResponse.success || !categoryResponse.data) {
+      return { data: [], currentPage: page, totalPages: 1, totalItems: 0 }
     }
-  },
-  
-  getByCategory: async (categorySlug: string) => 
+
+    const categoryId = categoryResponse.data.id
+
+    // 2. Buscar produtos da categoria usando query params
+    const url = `/api/products?categoria_id=${categoryId}&page=${page}&limit=${limit}&include=all`
+    const response: any = await fetchPublicAPI(url)
+
+    const products = Array.isArray(response?.data) ? response.data : []
+    const totalItems = response?.totalItems ?? products.length
+    const totalPages = Math.max(1, Math.ceil(totalItems / limit))
+
+    return {
+      data: products,
+      currentPage: page,
+      totalPages,
+      totalItems,
+    }
+  } catch (err) {
+    console.error(`❌ Erro ao buscar produtos da categoria ${categorySlug}:`, err)
+    return { data: [], currentPage: options?.page ?? 1, totalPages: 1, totalItems: 0 }
+  }
+},
+
+
+  getByCategory: async (categorySlug: string) =>
+
     productsAPI.getByCategorySlug(categorySlug),
-  
-  search: (query: string) => 
+
+  search: (query: string) =>
     fetchPublicAPI(`/api/products/search?q=${encodeURIComponent(query)}&include=all`),
-  
+
   getFeatured: () => fetchPublicAPI("/api/products/featured?include=all"),
-  
+
   validateProductId: async (productIdentifier: string | number): Promise<{ id: string; isValid: boolean }> => {
     const idStr = productIdentifier.toString()
-    
+
     // Se for UUID válido
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr)) {
       try {
@@ -179,12 +206,12 @@ export const productsAPI = {
         return { id: idStr, isValid: false }
       }
     }
-    
+
     // Se for número, rejeita imediatamente (IDs numéricos não existem mais)
     if (/^\d+$/.test(idStr)) {
       return { id: idStr, isValid: false }
     }
-    
+
     // Se for string, tenta buscar por slug
     try {
       const product = await productsAPI.getBySlug(idStr)
@@ -194,7 +221,7 @@ export const productsAPI = {
     } catch (error) {
       // Não faz nada, apenas retorna inválido
     }
-    
+
     return { id: idStr, isValid: false }
   },
 }
@@ -204,8 +231,8 @@ export const productsAPI = {
 ======================= */
 export function getToken() {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('cliente_token') || 
-           sessionStorage.getItem('cliente_token')
+    return localStorage.getItem('cliente_token') ||
+      sessionStorage.getItem('cliente_token')
   }
   return null
 }
@@ -236,23 +263,23 @@ export function isAuthenticated() {
 ======================= */
 export const cartAPI = {
   getCart: () => fetchWithAuth('/api/cart'),
-  
+
   // ➕ Adicionar item ao carrinho - VERSÃO SIMPLIFICADA E FUNCIONAL
   addToCart: async (produto_id: string | number, quantidade: number = 1) => {
     try {
       const { id: validatedId, isValid } = await productsAPI.validateProductId(produto_id)
-      
+
       if (!isValid) {
         throw new Error(`Produto ID ${produto_id} é inválido ou não existe`)
       }
-      
+
       console.log(`🛒 [cartAPI.addToCart] Enviando:`, { produto_id: validatedId, quantidade })
-      
+
       return await fetchWithAuth('/api/cart', {
         method: 'POST',
-        body: JSON.stringify({ 
-          produto_id: validatedId, 
-          quantidade 
+        body: JSON.stringify({
+          produto_id: validatedId,
+          quantidade
         })
       })
     } catch (error) {
@@ -260,49 +287,49 @@ export const cartAPI = {
       throw error
     }
   },
-  
-  updateQuantity: (item_id: string, quantidade: number) => 
+
+  updateQuantity: (item_id: string, quantidade: number) =>
     fetchWithAuth(`/api/cart/${item_id}`, {
       method: 'PUT',
       body: JSON.stringify({ quantidade })
     }),
-  
-  removeItem: (item_id: string) => 
+
+  removeItem: (item_id: string) =>
     fetchWithAuth(`/api/cart/item/${item_id}`, {
       method: 'DELETE',
     }),
-  
-  clearCart: () => 
+
+  clearCart: () =>
     fetchWithAuth('/api/cart/clear', {
       method: 'DELETE',
     }),
-  
+
   syncLocalCart: async (localCart: Array<{ productId: string | number; quantity: number }>) => {
     const token = getToken()
     if (!token || localCart.length === 0) return { success: false, message: 'Nenhum item para sincronizar' }
-    
+
     try {
       // Filtra apenas UUIDs válidos
       const validCartItems = []
-      
+
       for (const item of localCart) {
         if (!item.productId) continue
-        
+
         const idStr = item.productId.toString()
-        
+
         // Aceita apenas UUIDs válidos
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr)) {
           validCartItems.push(item)
         }
       }
-      
+
       if (validCartItems.length === 0) {
         return { success: false, message: 'Nenhum item válido para sincronizar' }
       }
-      
+
       // Limpa e adiciona itens válidos
       await cartAPI.clearCart()
-      
+
       for (const item of validCartItems) {
         try {
           await cartAPI.addToCart(item.productId, item.quantity)
@@ -310,9 +337,9 @@ export const cartAPI = {
           console.error(`⚠️ Erro ao sincronizar item ${item.productId}:`, error)
         }
       }
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         totalItems: localCart.length,
         validItems: validCartItems.length,
       }
@@ -327,14 +354,14 @@ export const cartAPI = {
    PEDIDOS
 ======================= */
 export const ordersAPI = {
-  createOrder: (orderData: any) => 
+  createOrder: (orderData: any) =>
     fetchWithAuth('/api/orders', {
       method: 'POST',
       body: JSON.stringify(orderData)
     }),
-  
+
   getMyOrders: () => fetchWithAuth('/api/orders/my'),
-  
+
   getOrderById: (orderId: string) => fetchWithAuth(`/api/orders/${orderId}`),
 }
 
@@ -348,16 +375,16 @@ export const ecommerceHelpers = {
       currency: 'BRL',
     }).format(price)
   },
-  
+
   getColors: (product: any): string[] => {
     if (product.produto_cores && Array.isArray(product.produto_cores)) {
       return product.produto_cores.map((cor: any) => cor.nome || cor.cor || 'Desconhecida')
     }
-    
+
     if (product.cores && Array.isArray(product.cores)) {
       return product.cores
     }
-    
+
     return ["Default"]
   },
 
@@ -366,14 +393,14 @@ export const ecommerceHelpers = {
       const imagem = product.produto_midias.find((m: any) => m.tipo === 'imagem')
       return imagem?.url || product.produto_midias[0]?.url || "/placeholder.svg"
     }
-    
+
     const image = product.midias?.find((m: any) => m.tipo === 'imagem')
     return image?.url || "/placeholder.svg"
   },
-  
+
   adaptProductForGrid: (product: any) => {
     const mainImage = ecommerceHelpers.getMainImage(product)
-    
+
     return {
       id: product.id?.toString() || '',
       name: product.nome || 'Produto sem nome',
@@ -382,7 +409,7 @@ export const ecommerceHelpers = {
       colors: ecommerceHelpers.getColors(product),
       category: product.categoria?.nome || "",
       price: ecommerceHelpers.formatPrice(product.preco || 0),
-      originalPrice: product.preco_original ? 
+      originalPrice: product.preco_original ?
         ecommerceHelpers.formatPrice(product.preco_original) : undefined,
       rating: product.avaliacao || 4.5,
       reviewCount: product.total_avaliacoes || 0,
@@ -399,7 +426,7 @@ export const ecommerceHelpers = {
       originalProduct: product
     }
   },
-  
+
   generateSlug: (text: string): string => {
     return text
       .toLowerCase()
@@ -418,10 +445,10 @@ export const productIdUtils = {
     const idStr = id.toString()
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr)
   },
-  
+
   cleanLocalCart: (localCart: any[]): any[] => {
     if (!localCart || localCart.length === 0) return []
-    
+
     return localCart.filter(item => {
       if (!item.productId) return false
       const idStr = item.productId.toString()

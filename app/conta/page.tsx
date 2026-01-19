@@ -7,7 +7,6 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { User, Settings, ShoppingBag, Heart, LogOut, Package, CreditCard, MapPin, Bell, Shield, Loader2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useState } from "react"
 import { authAPI, ordersAPI } from "@/lib/api"
 import { useRouter } from "next/navigation"
@@ -25,18 +24,20 @@ interface UserProfile {
   data_atualizacao: string;
 }
 
+interface OrderItem {
+  id: string;
+  produto_nome: string;
+  quantidade: number;
+  preco_unitario: number;
+}
+
 interface Order {
   id: string;
   numero_pedido: string;
   status: string;
   total: number;
   data_criacao: string;
-  itens: Array<{
-    id: string;
-    produto_nome: string;
-    quantidade: number;
-    preco_unitario: number;
-  }>;
+  itens: OrderItem[];
 }
 
 interface Address {
@@ -92,7 +93,7 @@ export default function AccountPage() {
     } catch (error) {
       console.error("Erro ao carregar perfil:", error)
       toast.error("Erro ao carregar dados do perfil")
-      router.push("/login")
+      router.push("/entrar")
     } finally {
       setLoading(false)
     }
@@ -100,47 +101,49 @@ export default function AccountPage() {
 
   const loadOrders = async () => {
     try {
-      const ordersData = await ordersAPI.getMyOrders()
-      setOrders(ordersData)
+      const response = await ordersAPI.getMyOrders()
+      
+      // Tratamento seguro dos dados
+      let ordersArray: Order[] = []
+      
+      if (response && Array.isArray(response)) {
+        ordersArray = response
+      } else if (response && typeof response === 'object') {
+        // Se a API retornar um objeto, tenta extrair o array
+        const possibleArray = response.orders || response.data || response.itens
+        if (Array.isArray(possibleArray)) {
+          ordersArray = possibleArray
+        } else if (response.id) {
+          // Se for um único pedido, coloca em array
+          ordersArray = [response]
+        }
+      }
+      
+      console.log("Pedidos carregados:", ordersArray)
+      setOrders(ordersArray)
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error)
+      toast.error("Erro ao carregar pedidos")
+      setOrders([])
     }
   }
 
   const loadAddresses = async () => {
-    // Carregar endereços da API
-    // Implementar quando a API de endereços estiver disponível
-    const mockAddresses: Address[] = [
-      {
-        id: "1",
-        tipo: "Casa",
-        rua: "Rua Exemplo",
-        numero: "123",
-        bairro: "Centro",
-        cidade: "São Paulo",
-        estado: "SP",
-        cep: "01001-000",
-        principal: true
-      },
-      {
-        id: "2",
-        tipo: "Trabalho",
-        rua: "Av. Paulista",
-        numero: "1000",
-        bairro: "Bela Vista",
-        cidade: "São Paulo",
-        estado: "SP",
-        cep: "01310-100",
-        principal: false
-      }
-    ]
-    setAddresses(mockAddresses)
+    try {
+      // TODO: Implementar API de endereços quando disponível
+      // Por enquanto, deixar array vazio
+      setAddresses([])
+    } catch (error) {
+      console.error("Erro ao carregar endereços:", error)
+      setAddresses([])
+    }
   }
 
   const handleSaveProfile = async () => {
     try {
       setProfileLoading(true)
-      // Implementar chamada para atualizar perfil
+      // TODO: Implementar chamada para atualizar perfil
+      // await authAPI.updateProfile(formData)
       toast.success("Perfil atualizado com sucesso!")
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error)
@@ -400,12 +403,14 @@ export default function AccountPage() {
                 </Card>
               )}
 
-              {/* Aba Pedidos */}
+              {/* Aba Pedidos - CORREÇÃO APLICADA */}
               {activeTab === "pedidos" && (
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-6">Histórico de Pedidos</h3>
-                    {orders.length === 0 ? (
+                    
+                    {/* Verificação segura para orders */}
+                    {!Array.isArray(orders) || orders.length === 0 ? (
                       <div className="text-center py-12">
                         <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <h4 className="text-lg font-medium mb-2">Nenhum pedido encontrado</h4>
@@ -432,13 +437,19 @@ export default function AccountPage() {
                                 <div className="mt-2 text-sm">
                                   <p className="font-medium">Itens:</p>
                                   <ul className="text-muted-foreground">
-                                    {order.itens?.slice(0, 2).map((item, idx) => (
-                                      <li key={idx} className="truncate">
-                                        • {item.produto_nome} × {item.quantidade}
-                                      </li>
-                                    ))}
-                                    {order.itens && order.itens.length > 2 && (
-                                      <li>+ {order.itens.length - 2} outros itens</li>
+                                    {Array.isArray(order.itens) && order.itens.length > 0 ? (
+                                      <>
+                                        {order.itens.slice(0, 2).map((item, idx) => (
+                                          <li key={item.id || idx} className="truncate">
+                                            • {item.produto_nome} × {item.quantidade}
+                                          </li>
+                                        ))}
+                                        {order.itens.length > 2 && (
+                                          <li>+ {order.itens.length - 2} outros itens</li>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <li className="text-muted-foreground/70">Nenhum item detalhado</li>
                                     )}
                                   </ul>
                                 </div>
@@ -452,7 +463,7 @@ export default function AccountPage() {
                                     ? "bg-red-100 text-red-800"
                                     : "bg-blue-100 text-blue-800"
                                 }`}>
-                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                  {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pendente"}
                                 </span>
                               </div>
                             </div>
@@ -484,7 +495,7 @@ export default function AccountPage() {
                       <Button>Adicionar Endereço</Button>
                     </div>
                     
-                    {addresses.length === 0 ? (
+                    {!Array.isArray(addresses) || addresses.length === 0 ? (
                       <div className="text-center py-12">
                         <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <h4 className="text-lg font-medium mb-2">Nenhum endereço cadastrado</h4>

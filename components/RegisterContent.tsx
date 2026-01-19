@@ -35,7 +35,7 @@ export default function RegisterContent() {
   }
 
   const handleLogin = () => {
-    window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`
+    window.location.href = `/entrar?redirect=${encodeURIComponent(redirect)}`
   }
 
   const handleRegister = async (formData: any) => {

@@ -4,6 +4,12 @@ import { StackedCardsInteraction } from "@/components/ui/stacked-cards-interacti
 import { useEffect, useState } from "react";
 import { categoriesAPI, productsAPI } from '@/lib/api';
 
+interface Card {
+  image: string
+  title: string
+  description: string
+}
+
 const SectionProducts = () => {
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,37 +20,33 @@ const SectionProducts = () => {
       try {
         setLoading(true);
         console.log("📦 Carregando categorias e produtos...");
-        
+
         // 1. Busca todas as categorias
         const categoriesResponse = await categoriesAPI.getAll();
         const categories = categoriesResponse.data || categoriesResponse || [];
-        
+
         console.log(`✅ Categorias encontradas: ${categories.length}`);
-        
+
         // 2. Para cada categoria, busca produtos reais
         const groupsPromises = categories.slice(0, 6).map(async (category: any) => {
           try {
             console.log(`🔍 Buscando produtos da categoria: ${category.nome}`);
-            
-            // Busca produtos desta categoria
-            const productsData = await productsAPI.getByCategory(category.slug);
-            
-            // Pega até 3 produtos reais
+
+            const productsResponse = await productsAPI.getByCategory(category.slug);
+            const productsData = productsResponse.data || [];
+
             const realProducts = productsData.slice(0, 3);
-            
-            // Se não tiver produtos suficientes, usa placeholders
-            let cards = [];
-            
+
+            let cards: Card[] = []
+
             if (realProducts.length > 0) {
-              // Usa produtos reais
               cards = realProducts.map((product: any) => ({
                 image: product.produto_midias?.[0]?.url || "/placeholder.svg",
                 title: product.nome,
-                description: product.descricao?.substring(0, 50) + "..." || "Produto exclusivo",
+                description: (product.descricao?.substring(0, 50) + "...") || "Produto exclusivo",
               }));
             }
-            
-            // Completa com placeholders se necessário
+
             while (cards.length < 3) {
               cards.push({
                 image: "/placeholder.svg",
@@ -52,7 +54,7 @@ const SectionProducts = () => {
                 description: "Em breve",
               });
             }
-            
+
             return {
               cards,
               button: {
@@ -60,17 +62,17 @@ const SectionProducts = () => {
                 link: `/category/${category.slug}`,
               },
             };
-            
           } catch (err) {
             console.error(`❌ Erro ao carregar produtos da categoria ${category.nome}:`, err);
-            
-            // Retorna categoria com placeholders em caso de erro
+
+            const cards: Card[] = [
+              { image: "/placeholder.svg", title: "Modelos Exclusivos", description: "Coleção especial" },
+              { image: "/placeholder.svg", title: "Edição Limitada", description: "Feito à mão" },
+              { image: "/placeholder.svg", title: "Lançamento", description: "Novidades em breve" },
+            ];
+
             return {
-              cards: [
-                { image: "/placeholder.svg", title: "Modelos Exclusivos", description: "Coleção especial" },
-                { image: "/placeholder.svg", title: "Edição Limitada", description: "Feito à mão" },
-                { image: "/placeholder.svg", title: "Lançamento", description: "Novidades em breve" },
-              ],
+              cards,
               button: {
                 label: category.nome,
                 link: `/category/${category.slug}`,
@@ -78,13 +80,14 @@ const SectionProducts = () => {
             };
           }
         });
-        
+
+
         // 3. Aguarda todas as promises
         const groupsData = await Promise.all(groupsPromises);
         setGroups(groupsData);
-        
+
         console.log(`🎉 Grupos carregados: ${groupsData.length}`);
-        
+
       } catch (err) {
         console.error("❌ Erro geral ao carregar:", err);
         setError("Não foi possível carregar os dados");
@@ -112,7 +115,6 @@ const SectionProducts = () => {
     return (
       <div className="text-center py-12">
         <p className="text-red-600">Erro ao carregar produtos</p>
-        <p className="text-sm text-gray-500 mt-2">Tente recarregar a página</p>
       </div>
     );
   }
@@ -120,8 +122,7 @@ const SectionProducts = () => {
   if (groups.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Nenhum produto disponível</p>
-        <p className="text-sm text-gray-500 mt-2">Adicione produtos no painel administrativo</p>
+        <p className="text-600">Nenhum produto disponível</p>
       </div>
     );
   }

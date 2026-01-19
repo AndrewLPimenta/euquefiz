@@ -86,7 +86,7 @@ export default function FavoritesPage() {
     } catch (error) {
       console.error("Erro ao carregar favoritos:", error)
       toast.error("Você precisa estar logado para ver seus favoritos")
-      router.push("/login")
+      router.push("/entrar")
     } finally {
       setLoading(false)
     }

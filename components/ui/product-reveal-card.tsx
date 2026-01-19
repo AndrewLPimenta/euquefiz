@@ -73,7 +73,7 @@ export function ProductRevealCard({
     
     if (!isAuthenticated) {
       toast.info("Faça login para adicionar aos favoritos")
-      router.push("/login")
+      router.push("/entrar")
     }
   }
 

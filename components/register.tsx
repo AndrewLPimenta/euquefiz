@@ -308,7 +308,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               <p className="text-center text-sm text-muted-foreground">
                 Já tem uma conta?{' '}
                 <Link
-                  href="/login"
+                  href="/entrar"
                   className="text-primary hover:underline transition-colors"
                 >
                   Faça login aqui
