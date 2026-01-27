@@ -364,6 +364,66 @@ export const ordersAPI = {
   getMyOrders: () => fetchWithAuth('/api/orders/my'),
 
   getOrderById: (orderId: string) => fetchWithAuth(`/api/orders/${orderId}`),
+
+  // Criar pagamento Mercado Pago
+  createMercadoPagoPayment: (orderId: string, returnUrl?: string) =>
+    fetchWithAuth(`/api/orders/${orderId}/create-payment`, {
+      method: 'POST',
+      body: JSON.stringify({ return_url: returnUrl })
+    }),
+
+  // Verificar status do pagamento
+  getPaymentStatus: (orderId: string) =>
+    fetchWithAuth(`/api/orders/${orderId}/payment-status`),
+
+  // Validar cupom
+  validateCoupon: (couponCode: string, subtotal: number) =>
+    fetchWithAuth('/api/orders/validate-coupon', {
+      method: 'POST',
+      body: JSON.stringify({ coupon_code: couponCode, subtotal })
+    }),
+
+  // Aplicar cupom a um pedido
+  applyCoupon: (orderId: string, couponCode: string) =>
+    fetchWithAuth(`/api/orders/${orderId}/apply-coupon`, {
+      method: 'POST',
+      body: JSON.stringify({ coupon_code: couponCode })
+    }),
+
+  // Remover cupom de um pedido
+  removeCoupon: (orderId: string) =>
+    fetchWithAuth(`/api/orders/${orderId}/remove-coupon`, {
+      method: 'DELETE'
+    }),
+
+  // Buscar cupons do usuário
+  getUserCoupons: () => fetchWithAuth('/api/orders/my-coupons'),
+
+  // Buscar pedido por payment_id (necessário para as páginas de pagamento)
+  getOrderByPaymentId: async (paymentId: string) => {
+    // Você precisa criar essa rota no backend ou buscar via API
+    try {
+      const response = await fetchWithAuth(`/api/orders/payment/${paymentId}`)
+      return response
+    } catch (error) {
+      console.error('Erro ao buscar pedido por payment_id:', error)
+      // Alternativa: buscar todos os pedidos e filtrar
+      const { data: orders } = await ordersAPI.getMyOrders()
+      const order = Array.isArray(orders) 
+        ? orders.find(o => o.payment_id === paymentId) 
+        : null
+      return { success: !!order, data: order }
+    }
+  }
+}
+
+// 🔧 Adicione também uma função auxiliar para formatação de moeda
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value)
+
 }
 
 /* =======================
@@ -627,14 +687,136 @@ export const clientOrdersAPI = {
             total: (item.quantidade || 1) * (item.preco || 0)
           })) || []
         }
+        
       }
-      
+
       throw new Error('Pedido não encontrado')
     } catch (error) {
       console.error('❌ Erro ao buscar pedido:', error)
       throw error
     }
   },
+}
+
+/* =======================
+   CHECKOUT & FRETE
+======================= */
+export const checkoutAPI = {
+  calculateShipping: async (cep: string, items: any[], subtotal: number) => {
+    try {
+      console.log("🚚 Calculando frete para CEP:", cep);
+      
+      // Tenta chamar o backend
+      const response = await fetchWithAuth('/api/checkout/calculate-shipping', {
+        method: 'POST',
+        body: JSON.stringify({ cep, items, subtotal })
+      });
+      
+      console.log("✅ Resposta do backend:", response);
+      return response;
+      
+    } catch (error: any) {
+      console.error('⚠️ Backend de frete não disponível:', error.message);
+      console.log('🔄 Usando cálculo local como fallback...');
+      
+      // FALLBACK: cálculo local
+      const cleanCEP = cep.replace(/\D/g, '');
+      
+      if (cleanCEP.length !== 8) {
+        return {
+          success: false,
+          error: "CEP inválido"
+        };
+      }
+      
+      let frete = 0;
+      const freteGratis = subtotal > 200;
+      
+      if (freteGratis) {
+        frete = 0;
+      } else {
+        const totalItems = items.reduce((sum, item) => sum + (item.quantidade || 1), 0);
+        
+        if (totalItems <= 2) frete = 15;
+        else if (totalItems <= 5) frete = 25;
+        else if (totalItems <= 10) frete = 35;
+        else frete = 45;
+      }
+      
+      return {
+        success: true,
+        data: {
+          value: frete,
+          formatted_value: `R$ ${frete.toFixed(2)}`,
+          estimated_days: '3-7 dias úteis',
+          service: freteGratis ? 'Grátis' : 'Padrão',
+          free_shipping: freteGratis,
+          details: {
+            cep: cleanCEP,
+            subtotal,
+            items_count: items.length,
+            total_items: items.reduce((sum, item) => sum + (item.quantidade || 1), 0)
+          }
+        }
+      };
+    }
+  },
+
+
+  // Buscar endereço por CEP (via API pública)
+  getAddressByCEP: async (cep: string) => {
+    try {
+      // Remove caracteres não numéricos
+      const cleanCEP = cep.replace(/\D/g, '')
+      
+      if (cleanCEP.length !== 8) {
+        return { success: false, error: 'CEP inválido' }
+      }
+
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`)
+      const data = await response.json()
+
+      if (data.erro) {
+        return { success: false, error: 'CEP não encontrado' }
+      }
+
+      return {
+        success: true,
+        data: {
+          rua: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf,
+          cep: data.cep
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+      return { success: false, error: 'Erro ao buscar endereço' }
+    }
+  }
+}
+
+/* =======================
+   FUNÇÕES DE FORMATAÇÃO
+======================= */
+export const formatCEP = (cep: string): string => {
+  const clean = cep.replace(/\D/g, '')
+  if (clean.length === 8) {
+    return clean.replace(/^(\d{5})(\d{3})$/, '$1-$2')
+  }
+  return cep
+}
+
+export const formatPhone = (phone: string): string => {
+  const clean = phone.replace(/\D/g, '')
+  if (clean.length === 11) {
+    return clean.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
+  }
+  if (clean.length === 10) {
+    return clean.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3')
+  }
+  return phone
 }
 
 /* =======================
@@ -652,5 +834,7 @@ export default {
   setToken,
   clearToken,
   isAuthenticated,
+  checkoutAPI,
   BASE_URL,
+
 }

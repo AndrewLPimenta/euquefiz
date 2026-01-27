@@ -1,235 +1,299 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { User, Settings, ShoppingBag, Heart, LogOut, Package, CreditCard, MapPin, Bell, Shield, Loader2 } from "lucide-react"
+import { 
+  User, Settings, Package, Heart, LogOut, 
+  MapPin, Shield, CreditCard, Bell, Truck,
+  Calendar, CheckCircle, Clock, AlertCircle,
+  ArrowRight, ShoppingBag, Home, Loader2
+} from "lucide-react"
 import { Separator } from "@/components/ui/separator"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import AccountLayout from "@/components/account-layout"
 import { useAuth } from "@/contexts/auth-context"
-import { clientProfileAPI, clientOrdersAPI, addressAPI } from "@/lib/api"
+import { clientOrdersAPI } from "@/lib/api"
 
-// Interfaces para tipagem
-interface UserProfile {
-  id: string
-  nome: string
-  email: string
-  whatsapp?: string
-  sexo?: string
-  endereco?: string
-  data_criacao: string
-  data_atualizacao: string
+// Componente de Loading
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-32 rounded-lg" />
+        ))}
+      </div>
+      <Skeleton className="h-64 rounded-lg" />
+    </div>
+  )
 }
 
-interface OrderItem {
-  id: string
-  produto_nome: string
-  quantidade: number
-  preco_unitario: number
+// Componente de Stats
+function AccountStats({ user, orders }: { user: any; orders: any[] }) {
+  const stats = [
+    {
+      title: "Pedidos Totais",
+      value: orders.length.toString(),
+      icon: Package,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      link: "/conta/pedidos"
+    },
+    {
+      title: "Pedidos Pendentes",
+      value: orders.filter(o => o.status === 'pendente').length.toString(),
+      icon: Clock,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50",
+      link: "/conta/pedidos?status=pendente"
+    },
+    {
+      title: "Pedidos Entregues",
+      value: orders.filter(o => o.status === 'entregue').length.toString(),
+      icon: CheckCircle,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      link: "/conta/pedidos?status=entregue"
+    },
+    {
+      title: "Membro desde",
+      value: user?.data_criacao 
+        ? new Date(user.data_criacao).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+        : "N/A",
+      icon: Calendar,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      link: "/conta"
+    }
+  ]
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {stats.map((stat, index) => (
+        <Card key={index} className="group hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 rounded-full ${stat.bgColor}`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              </div>
+              <Link href={stat.link} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowRight className="h-4 w-4 text-gray-400" />
+              </Link>
+            </div>
+            <p className="text-2xl font-bold">{stat.value}</p>
+            <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }
 
-interface Order {
-  id: string
-  numero_pedido: string
-  status: string
-  total: number
-  data_criacao: string
-  itens: OrderItem[]
+// Componente de Atalhos
+function QuickLinks() {
+  const links = [
+    {
+      title: "Meus Pedidos",
+      description: "Acompanhe seus pedidos",
+      icon: Package,
+      href: "/conta/pedidos",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    {
+      title: "Favoritos",
+      description: "Produtos salvos",
+      icon: Heart,
+      href: "/conta/favoritos",
+      color: "text-pink-600",
+      bgColor: "bg-pink-50"
+    },
+    {
+      title: "Endereços",
+      description: "Gerencie endereços",
+      icon: MapPin,
+      href: "/conta/enderecos",
+      color: "text-green-600",
+      bgColor: "bg-green-50"
+    },
+    {
+      title: "Segurança",
+      description: "Altere sua senha",
+      icon: Shield,
+      href: "/conta/alterar-senha",
+      color: "text-red-600",
+      bgColor: "bg-red-50"
+    }
+  ]
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {links.map((link, index) => (
+        <Link key={index} href={link.href}>
+          <Card className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-full ${link.bgColor}`}>
+                  <link.icon className={`h-6 w-6 ${link.color}`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold group-hover:text-primary transition-colors">
+                    {link.title}
+                  </h3>
+                  <p className="text-sm text-gray-500">{link.description}</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      ))}
+    </div>
+  )
 }
 
-interface Address {
-  id: string
-  tipo: string
-  rua: string
-  numero: string
-  complemento?: string
-  bairro: string
-  cidade: string
-  estado: string
-  cep: string
-  principal: boolean
+// Componente de Pedidos Recentes
+function RecentOrders({ orders }: { orders: any[] }) {
+  if (orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum pedido ainda</h3>
+            <p className="text-gray-500 mb-6">Comece a comprar para ver seus pedidos aqui</p>
+            <Button asChild>
+              <Link href="/produtos">
+                <ShoppingBag className="mr-2 h-5 w-5" />
+                Explorar Produtos
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const recentOrders = orders.slice(0, 3)
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold">Pedidos Recentes</h3>
+            <p className="text-sm text-gray-500">Seus últimos pedidos</p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/conta/pedidos">
+              Ver todos
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {recentOrders.map((order) => (
+            <div 
+              key={order.id} 
+              className="group p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Link href={`/conta/pedidos/${order.id}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-semibold">#{order.numero_pedido}</span>
+                      <Badge 
+                        variant={
+                          order.status === 'entregue' ? 'default' :
+                          order.status === 'cancelado' ? 'destructive' : 'outline'
+                        }
+                        className={`
+                          ${order.status === 'entregue' ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}
+                          ${order.status === 'pendente' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' : ''}
+                          ${order.status === 'cancelado' ? 'bg-red-100 text-red-800 hover:bg-red-100' : ''}
+                        `}
+                      >
+                        {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pendente'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(order.data_criacao).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                      <span className="mx-2">•</span>
+                      <Truck className="h-4 w-4" />
+                      <span>Entrega estimada</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-lg">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(order.total)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {order.itens?.length || 0} ite{order.itens?.length === 1 ? 'm' : 'ns'}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-gray-400 ml-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
+
+import { useState, useEffect } from "react"
 
 export default function AccountPage() {
-  const router = useRouter()
-  const { user, isAuthenticated, loading: authLoading, logout, updateUserProfile } = useAuth()
-  const [pageLoading, setPageLoading] = useState(true)
-  const [profileLoading, setProfileLoading] = useState(false)
-  const [orders, setOrders] = useState<Order[]>([])
-  const [addresses, setAddresses] = useState<Address[]>([])
-  const [activeTab, setActiveTab] = useState("perfil")
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    whatsapp: "",
-    sexo: "",
-    endereco: ""
-  })
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth()
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Redirecionar se não estiver autenticado
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast.error("Você precisa estar logado para acessar esta página")
-      router.push("/entrar")
+    if (user && isAuthenticated) {
+      loadOrders()
     }
-  }, [authLoading, isAuthenticated, router])
-
-  // Carregar dados quando o usuário estiver disponível
-  useEffect(() => {
-    if (user) {
-      loadInitialData()
-    }
-  }, [user])
-
-  // Atualizar formData quando user mudar
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        nome: user.nome || "",
-        email: user.email || "",
-        whatsapp: user.whatsapp || "",
-        sexo: user.sexo || "",
-        endereco: user.endereco || ""
-      })
-    }
-  }, [user])
-
-  const loadInitialData = async () => {
-    try {
-      setPageLoading(true)
-      
-      // Carregar dados em paralelo
-      await Promise.all([
-        loadOrders(),
-        loadAddresses()
-      ])
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error)
-    } finally {
-      setPageLoading(false)
-    }
-  }
+  }, [user, isAuthenticated])
 
   const loadOrders = async () => {
     try {
       const ordersData = await clientOrdersAPI.getMyOrders()
-      console.log("📦 Pedidos carregados:", ordersData)
       setOrders(ordersData)
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error)
-      toast.error("Erro ao carregar pedidos")
-      setOrders([])
-    }
-  }
-
-  const loadAddresses = async () => {
-    try {
-      const addressesData = await addressAPI.getMyAddresses()
-      console.log("📍 Endereços carregados:", addressesData)
-      setAddresses(addressesData)
-    } catch (error) {
-      console.error("Erro ao carregar endereços:", error)
-      setAddresses([])
-    }
-  }
-
-  const handleSaveProfile = async () => {
-    if (!user) return
-    
-    try {
-      setProfileLoading(true)
-      
-      const response = await clientProfileAPI.updateProfile(formData)
-      
-      if (response.success || response.id) {
-        // Atualizar usuário no contexto
-        const updatedUser = {
-          ...user,
-          nome: formData.nome,
-          email: formData.email,
-          whatsapp: formData.whatsapp,
-          sexo: formData.sexo,
-          endereco: formData.endereco
-        }
-        
-        updateUserProfile(updatedUser)
-        toast.success("Perfil atualizado com sucesso!")
-      } else {
-        throw new Error(response.error || "Erro ao atualizar perfil")
-      }
-    } catch (error: any) {
-      console.error("Erro ao atualizar perfil:", error)
-      toast.error(error.message || "Erro ao atualizar perfil")
     } finally {
-      setProfileLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleLogout = () => {
-    logout()
-    toast.success("Logout realizado com sucesso!")
-    router.push("/")
-  }
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Data não disponível"
-    
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pt-BR', {
-        month: 'long',
-        year: 'numeric'
-      })
-    } catch (error) {
-      return "Data inválida"
-    }
-  }
-
-  const formatOrderDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      })
-    } catch (error) {
-      return "Data inválida"
-    }
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price)
-  }
-
-  // Mostrar loading enquanto verifica autenticação
-  if (authLoading || pageLoading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Carregando seus dados...</p>
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <AccountLayout activeTab="dashboard">
+              <DashboardSkeleton />
+            </AccountLayout>
           </div>
         </main>
         <Footer />
       </div>
     )
-  }
-
-  // Se não estiver autenticado, não mostrar nada (será redirecionado)
-  if (!isAuthenticated || !user) {
-    return null
   }
 
   return (
@@ -238,361 +302,108 @@ export default function AccountPage() {
       
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4">
-          {/* Cabeçalho da conta */}
-          <div className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Minha Conta</h1>
-            <p className="text-muted-foreground">Gerencie suas informações, pedidos e preferências</p>
-          </div>
+          <AccountLayout activeTab="dashboard">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Olá, {user?.nome?.split(' ')[0] || 'Usuário'}! 👋
+              </h1>
+              <p className="text-gray-600">
+                Gerencie sua conta e acompanhe suas compras
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Menu lateral */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-8">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center mb-8">
-                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
-                      <User className="h-10 w-10 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-semibold">{user.nome}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    {user.data_criacao && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Membro desde {formatDate(user.data_criacao)}
-                      </p>
-                    )}
+            <Suspense fallback={<DashboardSkeleton />}>
+              {/* Stats */}
+              <AccountStats user={user} orders={orders} />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Coluna principal */}
+                <div className="lg:col-span-2 space-y-8">
+                  {/* Quick Links */}
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Atalhos Rápidos</h2>
+                    <QuickLinks />
                   </div>
 
-                  <nav className="space-y-2">
-                    <Button 
-                      variant={activeTab === "perfil" ? "secondary" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("perfil")}
-                    >
-                      <User className="h-5 w-5 mr-3" />
-                      <span>Informações Pessoais</span>
-                    </Button>
+                  {/* Recent Orders */}
+                  <div>
+                    <RecentOrders orders={orders} />
+                  </div>
+                </div>
 
-                    <Button 
-                      variant={activeTab === "pedidos" ? "secondary" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("pedidos")}
-                    >
-                      <Package className="h-5 w-5 mr-3" />
-                      <span>Meus Pedidos</span>
-                      {orders.length > 0 && (
-                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {orders.length}
-                        </span>
-                      )}
-                    </Button>
-
-                    <Button variant="ghost" className="w-full justify-start" asChild>
-                      <Link href="/conta/favoritos" className="flex items-center gap-3">
-                        <Heart className="h-5 w-5" />
-                        <span>Favoritos</span>
-                      </Link>
-                    </Button>
-
-                    <Button 
-                      variant={activeTab === "enderecos" ? "secondary" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("enderecos")}
-                    >
-                      <MapPin className="h-5 w-5 mr-3" />
-                      <span>Endereços</span>
-                      {addresses.length > 0 && (
-                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {addresses.length}
-                        </span>
-                      )}
-                    </Button>
-
-                    <Button 
-                      variant={activeTab === "seguranca" ? "secondary" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("seguranca")}
-                    >
-                      <Shield className="h-5 w-5 mr-3" />
-                      <span>Segurança</span>
-                    </Button>
-
-                    <Separator className="my-2" />
-
-                    <Button variant="ghost" className="w-full justify-start" asChild>
-                      <Link href="/conta/configuracoes" className="flex items-center gap-3">
-                        <Settings className="h-5 w-5" />
-                        <span>Configurações</span>
-                      </Link>
-                    </Button>
-
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="h-5 w-5 mr-3" />
-                      <span>Sair</span>
-                    </Button>
-                  </nav>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Conteúdo principal - MESMO CÓDIGO DO SEU ARQUIVO ANTERIOR, MAS COM FUNCIONALIDADES REAIS */}
-            <div className="lg:col-span-3">
-              {/* Aba Perfil */}
-              {activeTab === "perfil" && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Informações Pessoais</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Nome Completo *</label>
-                            <input
-                              type="text"
-                              value={formData.nome}
-                              onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                              className="w-full p-3 border rounded-lg"
-                              placeholder="Seu nome completo"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail *</label>
-                            <input
-                              type="email"
-                              value={formData.email}
-                              onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full p-3 border rounded-lg"
-                              placeholder="seu@email.com"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">WhatsApp</label>
-                            <input
-                              type="tel"
-                              value={formData.whatsapp}
-                              onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
-                              className="w-full p-3 border rounded-lg"
-                              placeholder="(11) 99999-9999"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Sexo</label>
-                            <select
-                              value={formData.sexo}
-                              onChange={(e) => setFormData({...formData, sexo: e.target.value})}
-                              className="w-full p-3 border rounded-lg"
-                            >
-                              <option value="">Selecione</option>
-                              <option value="M">Masculino</option>
-                              <option value="F">Feminino</option>
-                              <option value="O">Outro</option>
-                            </select>
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <label className="text-sm font-medium">Endereço Principal</label>
-                            <input
-                              type="text"
-                              value={formData.endereco}
-                              onChange={(e) => setFormData({...formData, endereco: e.target.value})}
-                              className="w-full p-3 border rounded-lg"
-                              placeholder="Rua, número, bairro, cidade"
-                            />
-                          </div>
+                {/* Coluna lateral */}
+                <div className="space-y-6">
+                  {/* Profile Summary */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                          <User className="h-8 w-8 text-primary" />
                         </div>
-                      </div>
-
-                      <div className="flex justify-end gap-4">
-                        <Button variant="outline" onClick={() => setFormData({
-                          nome: user.nome || "",
-                          email: user.email || "",
-                          whatsapp: user.whatsapp || "",
-                          sexo: user.sexo || "",
-                          endereco: user.endereco || ""
-                        })}>
-                          Cancelar
-                        </Button>
-                        <Button onClick={handleSaveProfile} disabled={profileLoading}>
-                          {profileLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Salvando...
-                            </>
-                          ) : (
-                            "Salvar Alterações"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Aba Pedidos */}
-              {activeTab === "pedidos" && (
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-6">Histórico de Pedidos</h3>
-                    
-                    {orders.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="text-lg font-medium mb-2">Nenhum pedido encontrado</h4>
-                        <p className="text-muted-foreground mb-6">
-                          Você ainda não fez nenhum pedido. Que tal explorar nossos produtos?
-                        </p>
-                        <Button asChild>
-                          <Link href="/produtos">
-                            <ShoppingBag className="mr-2 h-5 w-5" />
-                            Ver Produtos
-                          </Link>
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {orders.map((order) => (
-                          <div key={order.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                              <div>
-                                <p className="font-semibold">Pedido #{order.numero_pedido}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Data: {formatOrderDate(order.data_criacao)}
-                                </p>
-                                <div className="mt-2 text-sm">
-                                  <p className="font-medium">Itens:</p>
-                                  <ul className="text-muted-foreground">
-                                    {order.itens && order.itens.length > 0 ? (
-                                      <>
-                                        {order.itens.slice(0, 2).map((item, idx) => (
-                                          <li key={item.id || idx} className="truncate">
-                                            • {item.produto_nome} × {item.quantidade}
-                                          </li>
-                                        ))}
-                                        {order.itens.length > 2 && (
-                                          <li>+ {order.itens.length - 2} outros itens</li>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <li className="text-muted-foreground/70">Nenhum item detalhado</li>
-                                    )}
-                                  </ul>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-lg">{formatPrice(order.total)}</p>
-                                <span className={`text-sm px-2 py-1 rounded-full ${
-                                  order.status === "entregue" 
-                                    ? "bg-green-100 text-green-800"
-                                    : order.status === "cancelado"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}>
-                                  {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pendente"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="mt-4 flex gap-2">
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/conta/meuspedidos/${order.id}`}>Ver Detalhes</Link>
-                              </Button>
-                              <Button variant="outline" size="sm">Comprar Novamente</Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Aba Endereços */}
-              {activeTab === "enderecos" && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-semibold">Meus Endereços</h3>
-                      <Button>Adicionar Endereço</Button>
-                    </div>
-                    
-                    {addresses.length === 0 ? (
-                      <div className="text-center py-12">
-                        <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="text-lg font-medium mb-2">Nenhum endereço cadastrado</h4>
-                        <p className="text-muted-foreground">
-                          Adicione um endereço para facilitar suas compras
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {addresses.map((address) => (
-                          <Card key={address.id} className={address.principal ? "border-primary" : ""}>
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold">{address.tipo}</span>
-                                    {address.principal && (
-                                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                                        Principal
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm mt-2">
-                                    {address.rua}, {address.numero}
-                                    {address.complemento && `, ${address.complemento}`}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {address.bairro}, {address.cidade} - {address.estado}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">CEP: {address.cep}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button variant="ghost" size="sm">Editar</Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Aba Segurança */}
-              {activeTab === "seguranca" && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-4">
-                        <Shield className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="text-lg font-semibold">Segurança da Conta</h3>
-                          <p className="text-sm text-muted-foreground">Gerencie sua senha e preferências de segurança</p>
+                          <h3 className="font-semibold">{user?.nome || 'Usuário'}</h3>
+                          <p className="text-sm text-gray-500">{user?.email}</p>
                         </div>
                       </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">Alterar Senha</p>
-                            <p className="text-sm text-muted-foreground">Atualize sua senha regularmente</p>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                          <div className="p-2 rounded-full bg-white">
+                            <Bell className="h-4 w-4 text-gray-600" />
                           </div>
-                          <Button variant="outline" asChild>
-                            <Link href="/conta/alterar-senha">Alterar</Link>
-                          </Button>
+                          <div>
+                            <p className="text-sm font-medium">Notificações</p>
+                            <p className="text-xs text-gray-500">Ative para receber novidades</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                          <div className="p-2 rounded-full bg-white">
+                            <CreditCard className="h-4 w-4 text-gray-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Pagamentos</p>
+                            <p className="text-xs text-gray-500">Gerencie formas de pagamento</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+                      
+                      <Separator className="my-4" />
+                      
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href="/conta?tab=perfil">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Editar Perfil
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Need Help? */}
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 rounded-full bg-blue-100">
+                          <Shield className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <h3 className="font-semibold text-blue-900">Precisa de ajuda?</h3>
+                      </div>
+                      <p className="text-sm text-blue-800 mb-4">
+                        Estamos aqui para te ajudar com qualquer dúvida sobre sua conta ou pedidos.
+                      </p>
+                      <Button variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-50">
+                        <Link href="/contato" className="flex items-center justify-center w-full">
+                          Falar com Suporte
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </Suspense>
+          </AccountLayout>
         </div>
       </main>
 

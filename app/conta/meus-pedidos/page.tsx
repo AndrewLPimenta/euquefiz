@@ -1,160 +1,123 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  Package, Search, Filter, Calendar,
+  Truck, CheckCircle, Clock, AlertCircle,
+  Download, Eye, RefreshCw, ChevronRight
+} from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Package, ShoppingBag, Calendar, DollarSign, Truck, CheckCircle, XCircle, Clock, Loader2, Home, User } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { useAuth } from '@/contexts/auth-context'
-import { clientOrdersAPI } from '@/lib/api'
+import AccountLayout from "@/components/account-layout"
+import { clientOrdersAPI } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
-interface Order {
-  id: string
-  numero_pedido: string
-  status: string
-  total: number
-  data_criacao: string
-  itens: Array<{
-    id: string
-    produto_nome: string
-    quantidade: number
-    preco_unitario: number
-  }>
-}
-
-export default function MyOrdersPage() {
-  const router = useRouter()
-  const { isAuthenticated, loading: authLoading } = useAuth()
-  const [orders, setOrders] = useState<Order[]>([])
+export default function OrdersPage() {
+  const searchParams = useSearchParams()
+  const { user, isAuthenticated } = useAuth()
+  const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState("all")
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        toast.error("Você precisa estar logado para ver seus pedidos")
-        router.push("/entrar")
-      } else {
-        loadOrders()
-      }
+    if (isAuthenticated) {
+      loadOrders()
     }
-  }, [authLoading, isAuthenticated, router])
+  }, [isAuthenticated])
 
   const loadOrders = async () => {
     try {
       setLoading(true)
-      setError(null)
-      
       const ordersData = await clientOrdersAPI.getMyOrders()
       setOrders(ordersData)
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao carregar pedidos:", error)
-      setError("Erro ao carregar seus pedidos. Tente novamente mais tarde.")
       toast.error("Erro ao carregar pedidos")
     } finally {
       setLoading(false)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  // Filtros
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = searchTerm === "" || 
+      order.numero_pedido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.status.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price)
-  }
+  const statusOptions = [
+    { value: "all", label: "Todos os status" },
+    { value: "pendente", label: "Pendente" },
+    { value: "processando", label: "Processando" },
+    { value: "enviado", label: "Enviado" },
+    { value: "entregue", label: "Entregue" },
+    { value: "cancelado", label: "Cancelado" }
+  ]
 
   const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'entregue':
-        return <CheckCircle className="h-5 w-5 text-green-600" />
-      case 'cancelado':
-        return <XCircle className="h-5 w-5 text-red-600" />
-      case 'processando':
-      case 'em_processamento':
-        return <Clock className="h-5 w-5 text-blue-600" />
-      case 'enviado':
-        return <Truck className="h-5 w-5 text-purple-600" />
-      default:
-        return <Clock className="h-5 w-5 text-gray-600" />
+    switch (status) {
+      case 'entregue': return CheckCircle
+      case 'pendente': return Clock
+      case 'cancelado': return AlertCircle
+      default: return Package
     }
   }
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'entregue':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'cancelado':
-        return 'bg-red-100 text-red-800 border-red-200'
-      case 'processando':
-      case 'em_processamento':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'enviado':
-        return 'bg-purple-100 text-purple-800 border-purple-200'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+    switch (status) {
+      case 'entregue': return 'bg-green-100 text-green-800 hover:bg-green-100'
+      case 'pendente': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+      case 'processando': return 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+      case 'enviado': return 'bg-purple-100 text-purple-800 hover:bg-purple-100'
+      case 'cancelado': return 'bg-red-100 text-red-800 hover:bg-red-100'
+      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100'
     }
   }
 
-  const translateStatus = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'Pendente'
-      case 'processing':
-      case 'processando':
-      case 'em_processamento':
-        return 'Processando'
-      case 'shipped':
-      case 'enviado':
-        return 'Enviado'
-      case 'delivered':
-      case 'entregue':
-        return 'Entregue'
-      case 'cancelled':
-      case 'cancelado':
-        return 'Cancelado'
-      default:
-        return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Pendente'
-    }
-  }
-
-  const calculateTotalItems = (order: Order) => {
-    if (!order.itens || !Array.isArray(order.itens)) return 0
-    return order.itens.reduce((total, item) => total + (item.quantidade || 0), 0)
-  }
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-12">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-            <h2 className="text-2xl font-bold mb-2">Carregando seus pedidos...</h2>
-            <p className="text-muted-foreground">Aguarde um momento</p>
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <AccountLayout 
+              activeTab="pedidos"
+              title="Meus Pedidos"
+              description="Acompanhe o histórico e status dos seus pedidos"
+            >
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-32 rounded-lg" />
+                ))}
+              </div>
+            </AccountLayout>
           </div>
         </main>
         <Footer />
       </div>
     )
-  }
-
-  if (!isAuthenticated) {
-    return null
   }
 
   return (
@@ -163,219 +126,148 @@ export default function MyOrdersPage() {
       
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4">
-          {/* Cabeçalho */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Link href="/" className="hover:text-primary transition-colors">
-                <Home className="h-4 w-4 inline mr-1" />
-                Home
-              </Link>
-              <span>/</span>
-              <Link href="/conta" className="hover:text-primary transition-colors">
-                <User className="h-4 w-4 inline mr-1" />
-                Minha Conta
-              </Link>
-              <span>/</span>
-              <span className="font-medium">Meus Pedidos</span>
-            </div>
-            
-            <div className="flex items-center gap-4 mb-6">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <Package className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold">Meus Pedidos</h1>
-                <p className="text-muted-foreground">Acompanhe todos os seus pedidos em um só lugar</p>
-              </div>
-            </div>
-          </div>
+          <AccountLayout 
+            activeTab="pedidos"
+            title="Meus Pedidos"
+            description="Acompanhe o histórico e status dos seus pedidos"
+          >
+            {/* Barra de filtros */}
+            <Card className="mb-6">
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Buscar por número do pedido ou status..."
+                        className="pl-10"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filtrar status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-          {error ? (
-            <Card className="border-red-200">
-              <CardContent className="p-8 text-center">
-                <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Ops! Algo deu errado</h3>
-                <p className="text-muted-foreground mb-6">{error}</p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={loadOrders} variant="outline">
-                    Tentar Novamente
-                  </Button>
-                  <Button asChild>
-                    <Link href="/produtos">
-                      <ShoppingBag className="mr-2 h-4 w-4" />
-                      Continuar Comprando
-                    </Link>
-                  </Button>
+                    <Button variant="outline" onClick={loadOrders}>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          ) : orders.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Package className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-                <h3 className="text-2xl font-semibold mb-2">Nenhum pedido encontrado</h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Você ainda não realizou nenhuma compra. Explore nossa coleção e encontre produtos incríveis!
-                </p>
-                <Button asChild size="lg">
-                  <Link href="/produtos">
-                    <ShoppingBag className="mr-2 h-5 w-5" />
-                    Explorar Produtos
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <Package className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total de Pedidos</p>
-                        <p className="text-2xl font-bold">{orders.length}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-green-100 rounded-lg">
-                        <CheckCircle className="h-6 w-6 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Entregues</p>
-                        <p className="text-2xl font-bold">
-                          {orders.filter(o => o.status?.toLowerCase() === 'entregue').length}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-100 rounded-lg">
-                        <DollarSign className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Gasto</p>
-                        <p className="text-2xl font-bold">
-                          {formatPrice(orders.reduce((total, order) => total + (order.total || 0), 0))}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
+            {/* Lista de Pedidos */}
+            {filteredOrders.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {searchTerm || statusFilter !== "all" 
+                      ? "Nenhum pedido encontrado" 
+                      : "Nenhum pedido ainda"}
+                  </h3>
+                  <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                    {searchTerm || statusFilter !== "all" 
+                      ? "Tente ajustar seus filtros de busca." 
+                      : "Comece a comprar para ver seus pedidos aqui."}
+                  </p>
+                  <Button asChild>
+                    <Link href="/produtos">
+                      <Package className="mr-2 h-5 w-5" />
+                      Explorar Produtos
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
               <div className="space-y-4">
-                {orders.map((order) => (
-                  <Card key={order.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="p-6 border-b">
+                {filteredOrders.map((order) => {
+                  const StatusIcon = getStatusIcon(order.status)
+                  
+                  return (
+                    <Card key={order.id} className="group hover:shadow-lg transition-shadow">
+                      <CardContent className="p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              {getStatusIcon(order.status)}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <StatusIcon className="h-5 w-5 text-gray-400" />
                               <div>
-                                <h3 className="font-semibold text-lg">
+                                <h3 className="font-semibold">
                                   Pedido #{order.numero_pedido}
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">
-                                    {formatDate(order.data_criacao)}
+                                  <Badge variant="outline" className={getStatusColor(order.status)}>
+                                    {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pendente'}
+                                  </Badge>
+                                  <span className="text-sm text-gray-500">•</span>
+                                  <span className="text-sm text-gray-500">
+                                    {order.itens?.length || 0} ite{order.itens?.length === 1 ? 'm' : 'ns'}
                                   </span>
                                 </div>
                               </div>
                             </div>
+                            
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  {new Date(order.data_criacao).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Truck className="h-4 w-4" />
+                                <span>Entrega estimada: 3-7 dias úteis</span>
+                              </div>
+                            </div>
                           </div>
                           
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
-                              {translateStatus(order.status)}
-                            </span>
-                            <p className="text-2xl font-bold">{formatPrice(order.total)}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <h4 className="font-semibold mb-3">Itens do Pedido</h4>
-                            <div className="space-y-3">
-                              {order.itens && order.itens.length > 0 ? (
-                                <>
-                                  {order.itens.slice(0, 3).map((item, idx) => (
-                                    <div key={item.id || idx} className="flex items-center justify-between">
-                                      <div>
-                                        <p className="font-medium">{item.produto_nome}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {item.quantidade} × {formatPrice(item.preco_unitario)}
-                                        </p>
-                                      </div>
-                                      <p className="font-semibold">
-                                        {formatPrice(item.preco_unitario * item.quantidade)}
-                                      </p>
-                                    </div>
-                                  ))}
-                                  {order.itens.length > 3 && (
-                                    <p className="text-sm text-muted-foreground text-center">
-                                      + {order.itens.length - 3} outros itens
-                                    </p>
-                                  )}
-                                </>
-                              ) : (
-                                <p className="text-muted-foreground">Nenhum item detalhado disponível</p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div>
-                            <h4 className="font-semibold mb-3">Resumo</h4>
-                            <div className="space-y-2">
-                              <div className="flex justify-between">
-                                <span>Total de itens</span>
-                                <span className="font-medium">{calculateTotalItems(order)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Valor total</span>
-                                <span className="font-semibold">{formatPrice(order.total)}</span>
-                              </div>
+                          <div className="flex flex-col items-end gap-3">
+                            <p className="text-2xl font-bold">
+                              {new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                              }).format(order.total)}
+                            </p>
+                            
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/conta/pedidos/${order.id}`}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Detalhes
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Download className="h-4 w-4 mr-2" />
+                                Nota Fiscal
+                              </Button>
                             </div>
                           </div>
                         </div>
-
-                        <div className="mt-6 pt-6 border-t flex justify-between items-center">
-                          <div className="text-sm text-muted-foreground">
-                            ID do pedido: {order.id}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/conta/meuspedidos/${order.id}`}>
-                                Ver Detalhes Completos
-                              </Link>
-                            </Button>
-                            {order.status?.toLowerCase() === 'entregue' && (
-                              <Button variant="outline" size="sm">Comprar Novamente</Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
-            </div>
-          )}
+            )}
+          </AccountLayout>
         </div>
       </main>
 

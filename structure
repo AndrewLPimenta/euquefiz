@@ -1,5 +1,25 @@
 ops! tem um slug aqui: 📁 .next/
 📁 app/
+/app/conta/
+├── page.tsx                   ← Página principal (dashboard)
+├── favoritos/
+│   └── page.tsx              ← Página de favoritos
+├── pedidos/
+│   └── page.tsx              ← Lista de pedidos
+├── pedidos/[id]/
+│   └── page.tsx              ← Detalhe do pedido
+├── enderecos/
+│   └── page.tsx              ← Gestão de endereços
+└── alterar-senha/
+    └── page.tsx              ← Alterar senha
+📁 pagamento/
+└── sucesso/
+    └── page.tsx
+└── pendente/
+    └── page.tsx
+└── erro/
+    └── page.tsx
+├── page.tsx
 ├── cadastro/
 ├── category/[slug]/
 ├── page.tsx
@@ -35,3 +55,35 @@ ops! tem um slug aqui: 📁 .next/
     ├── auth.ts
     └── utils.ts
  só pra informar minha estrutura de pastas está assim
+
+
+back-end espera;
+
+    const preference = {
+      items: itemsForMP,
+      payer: {
+        name: pedido.cliente.nome,
+        email: pedido.cliente.email,
+        phone: { number: pedido.cliente.whatsapp?.replace(/\D/g, '') || "" }
+      },
+      external_reference: pedido.id,
+      notification_url: `${process.env.API_URL}/api/webhook/mercado-pago`,
+      back_urls: {
+        success: return_url || `${process.env.FRONTEND_URL}/pagamento/successo`,
+        failure: `${process.env.FRONTEND_URL}/pagamento/erro`,
+        pending: `${process.env.FRONTEND_URL}/pagamento/pendente`
+      },
+      auto_return: "approved",
+      payment_methods: { excluded_payment_methods: [{ id: "atm" }], installments: 12 },
+      statement_descriptor: process.env.MP_STATEMENT_DESCRIPTOR || "LOJA*COM",
+      binary_mode: true
+    }; 
+
+    📁 pagamento/
+└── sucesso/
+    └── page.tsx
+└── pendente/
+    └── page.tsx
+└── erro/
+    └── page.tsx
+├── page.tsx

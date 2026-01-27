@@ -268,7 +268,7 @@ export default function ProfilePage() {
                     <h3 className="text-lg font-semibold">{user.nome}</h3>
                     <p className="text-sm text-muted-foreground">{user.email}</p>
                     
-                    <div className="mt-6 space-y-3 w-full">
+                    {/* <div className="mt-6 space-y-3 w-full">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Membro desde:</span>
                         <span className="font-medium">
@@ -282,7 +282,7 @@ export default function ProfilePage() {
                           {user.data_atualizacao ? formatDate(user.data_atualizacao) : 'N/A'}
                         </span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </CardContent>
               </Card>
